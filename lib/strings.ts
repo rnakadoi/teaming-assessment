@@ -68,6 +68,45 @@ export const PATTERN_STRINGS = {
   itemCommentsHeading: "回答の組み合わせから見えること",
 } as const;
 
+export const TEAM_STRINGS = {
+  newTitle: "チームで実施する",
+  newLead:
+    "チームコードを発行し、メンバーに共有URLを配るだけで、チーム全体の「言える化」を集計できます。回答は匿名です。",
+  nameLabel: "チーム名（任意・集計画面に表示されます）",
+  namePlaceholder: "例: 営業1課",
+  createButton: "チームコードを発行する",
+  creating: "発行中…",
+  createdTitle: "チームを作成しました",
+  codeLabel: "チームコード",
+  shareUrlLabel: "メンバーへの共有URL",
+  copyUrl: "URLをコピー",
+  copiedUrl: "コピーしました",
+  resultsLink: "集計画面を開く",
+  answerSelfLink: "自分も回答する",
+  note: "コードとURLは再表示できません。この画面を閉じる前に控えてください。",
+  joinTitle: (name: string | null, code: string) =>
+    name ? `「${name}」のアセスメント` : `チーム ${code} のアセスメント`,
+  joinLead: "回答は匿名で送信され、チームには集計値のみが表示されます。",
+  roleLabel: "あなたの役割（任意）",
+  roleUnspecified: "回答しない",
+  roleLeader: "リーダー・管理職",
+  roleMember: "メンバー",
+  startButton: "回答をはじめる",
+  notFound: "チームが見つかりません。URLまたはコードをご確認ください。",
+  loading: "チーム情報を確認しています…",
+  statsTitle: "チーム集計",
+  statsN: (n: number) => `回答者数: ${n}名`,
+  statsAvgTotal: "総合スコア平均",
+  statsRadar: "因子別平均",
+  statsFewNote: (min: number) =>
+    `回答者が${min}名未満のため、分布・役割別の表示は行いません（匿名性保護のため）。`,
+  statsVariance: "ばらつきが大きい項目（対話の起点に）",
+  statsByRole: "役割別の平均",
+  statsAnonymity:
+    "個人の回答は表示されません。少人数の場合は誰の回答か推測できてしまう可能性があるため、結果をメンバーの詮索に使わないことをチームで合意した上でご活用ください。",
+  statsEmpty: "まだ回答がありません。共有URLからメンバーに回答してもらいましょう。",
+} as const;
+
 /** sessionStorage キー（回答マップ {"1":4,...,"20":2}） */
 export const STORAGE_KEY_ANSWERS = "yieruka.answers.v1";
 /** sessionStorage キー（結果表示用ペイロード） */

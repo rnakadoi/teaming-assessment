@@ -47,6 +47,18 @@ export const LEVEL_LABELS: Record<string, string> = {
   L: "低",
 };
 
+export const PATTERN_STRINGS = {
+  heading: "あなたのチームのパターン分析",
+  patternCodeLabel: (code: string) => `パターン: ${code}`,
+  sectionSummary: "見立て",
+  sectionBackground: "構造分析",
+  sectionFirstStep: "最初の一歩",
+  sectionSoundStep: "SOUNDの観点",
+  sectionLinks: "関連リンク",
+  notReady: "このパターンの分析文は準備中です。公開までしばらくお待ちください。",
+  itemCommentsHeading: "回答の組み合わせから見えること",
+} as const;
+
 /** sessionStorage キー（回答マップ {"1":4,...,"20":2}） */
 export const STORAGE_KEY_ANSWERS = "yieruka.answers.v1";
 /** sessionStorage キー（結果表示用ペイロード） */

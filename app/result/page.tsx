@@ -4,7 +4,13 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import FactorRadar from "@/components/FactorRadar";
-import { fetchMasters, type Masters } from "@/lib/masters";
+import PatternAnalysis from "@/components/PatternAnalysis";
+import {
+  fetchMasters,
+  fetchPatternAnalysis,
+  type Masters,
+  type PatternAnalysis as PatternAnalysisRow,
+} from "@/lib/masters";
 import { submitAssessment, type SubmitResult } from "@/lib/submit";
 import type { AnswerMap } from "@/lib/scoring";
 import {
@@ -47,12 +53,21 @@ function loadStoredAnswers(): AnswerMap | null {
 export default function ResultPage() {
   const [state, setState] = useState<State>({ phase: "loading" });
   const [masters, setMasters] = useState<Masters | null>(null);
+  const [pattern, setPattern] = useState<PatternAnalysisRow | null>(null);
 
   useEffect(() => {
     fetchMasters()
       .then(setMasters)
       .catch(() => setMasters(null)); // レーダー等はマスタ取得成功時のみ表示
   }, []);
+
+  // パターン分析文の取得（未投入なら null → 準備中表示）
+  useEffect(() => {
+    if (state.phase !== "ready") return;
+    fetchPatternAnalysis(state.result.pattern_code)
+      .then(setPattern)
+      .catch(() => setPattern(null));
+  }, [state]);
 
   const run = useCallback(() => {
     // 再読込時は保存済み結果を再利用（二重送信を防ぐ）
@@ -169,7 +184,10 @@ export default function ResultPage() {
         </div>
       )}
 
-      {/* F-04: パターン分析（タスク1-7） / F-05: MD出力（タスク1-9） */}
+      {/* F-04: パターン分析（アコーディオン段階表示＋関連リンク） */}
+      <PatternAnalysis patternCode={result.pattern_code} analysis={pattern} />
+
+      {/* F-05: MD出力（タスク1-9） */}
 
       <div className="text-center">
         <Link

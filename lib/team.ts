@@ -71,6 +71,7 @@ export async function fetchTeamByCode(code: string): Promise<TeamInfo | null> {
 // get_team_stats の返却（migration_init_schema.sql 準拠）
 export interface TeamStats {
   team_code: string;
+  team_name: string | null;
   n: number;
   avg_total: number | null;
   factor_avg: Record<string, number> | null;

@@ -23,6 +23,19 @@ export const ASSESSMENT_STRINGS = {
   instruction: "最近のチームの会議や話し合いを思い浮かべて、当てはまるものを選んでください。",
 } as const;
 
+export const RESULT_STRINGS = {
+  title: "診断結果",
+  totalLabel: "総合スコア",
+  totalRange: (min: number, max: number) => `（${min}〜+${max}）`,
+  bandHeading: "スコア帯の解説",
+  noAnswers: "回答データが見つかりません。アセスメントに回答してください。",
+  goAssessment: "アセスメントに回答する",
+  submitError: "結果の送信に失敗しました。",
+  retry: "再送信",
+  loading: "結果を集計しています…",
+  retake: "もう一度回答する",
+} as const;
+
 /** sessionStorage キー（回答マップ {"1":4,...,"20":2}） */
 export const STORAGE_KEY_ANSWERS = "yieruka.answers.v1";
 /** sessionStorage キー（結果表示用ペイロード） */

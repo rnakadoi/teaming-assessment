@@ -1,36 +1,43 @@
 "use client";
 
 // /result : 個人結果（F-02 総合スコア＋9段階解説。F-03/F-04/F-05 は後続タスクで追加）
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import FactorRadar from "@/components/FactorRadar";
 import PatternAnalysis from "@/components/PatternAnalysis";
 import {
+  fetchItemRules,
   fetchMasters,
   fetchPatternAnalysis,
+  type ItemRule,
   type Masters,
   type PatternAnalysis as PatternAnalysisRow,
 } from "@/lib/masters";
+import { evaluateItemRules, type FiredComment } from "@/lib/rules";
 import { submitAssessment, type SubmitResult } from "@/lib/submit";
 import type { AnswerMap } from "@/lib/scoring";
 import {
   LEVEL_LABELS,
+  PATTERN_STRINGS as PS,
   RESULT_STRINGS as S,
   STORAGE_KEY_ANSWERS,
   STORAGE_KEY_RESULT,
 } from "@/lib/strings";
 
+/** 保存ペイロード: RPC結果＋生回答（層3スタイル検知に使用） */
+export type StoredResult = SubmitResult & { raw_answers?: AnswerMap };
+
 type State =
   | { phase: "loading" }
   | { phase: "no-answers" }
   | { phase: "error"; message: string }
-  | { phase: "ready"; result: SubmitResult };
+  | { phase: "ready"; result: StoredResult };
 
-function loadStoredResult(): SubmitResult | null {
+function loadStoredResult(): StoredResult | null {
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY_RESULT);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as SubmitResult;
+    const parsed = JSON.parse(raw) as StoredResult;
     if (typeof parsed.total !== "number" || typeof parsed.pattern_code !== "string") return null;
     return parsed;
   } catch {
@@ -54,11 +61,15 @@ export default function ResultPage() {
   const [state, setState] = useState<State>({ phase: "loading" });
   const [masters, setMasters] = useState<Masters | null>(null);
   const [pattern, setPattern] = useState<PatternAnalysisRow | null>(null);
+  const [itemRules, setItemRules] = useState<ItemRule[]>([]);
 
   useEffect(() => {
     fetchMasters()
       .then(setMasters)
       .catch(() => setMasters(null)); // レーダー等はマスタ取得成功時のみ表示
+    fetchItemRules()
+      .then(setItemRules)
+      .catch(() => setItemRules([])); // 層3は取得成功時のみ表示
   }, []);
 
   // パターン分析文の取得（未投入なら null → 準備中表示）
@@ -68,6 +79,18 @@ export default function ResultPage() {
       .then(setPattern)
       .catch(() => setPattern(null));
   }, [state]);
+
+  // 層3: item_rules 評価（矛盾ペア上位2件＋スタイル検知＋top/bottom）
+  const itemComments = useMemo<FiredComment[]>(() => {
+    if (state.phase !== "ready" || !masters || itemRules.length === 0) return [];
+    const raw = state.result.raw_answers;
+    if (!raw) return [];
+    const adjusted: Record<number, number> = {};
+    for (const [k, v] of Object.entries(state.result.adjusted)) adjusted[Number(k)] = v;
+    const questionTexts: Record<number, string> = {};
+    for (const q of masters.questions) questionTexts[q.no] = q.text;
+    return evaluateItemRules(itemRules, { adjusted, rawAnswers: raw, questionTexts });
+  }, [state, masters, itemRules]);
 
   const run = useCallback(() => {
     // 再読込時は保存済み結果を再利用（二重送信を防ぐ）
@@ -84,13 +107,14 @@ export default function ResultPage() {
     setState({ phase: "loading" });
     submitAssessment(answers)
       .then((result) => {
+        const stored: StoredResult = { ...result, raw_answers: answers };
         try {
-          window.sessionStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(result));
+          window.sessionStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(stored));
           window.sessionStorage.removeItem(STORAGE_KEY_ANSWERS);
         } catch {
           // 保存不可でも表示は継続
         }
-        setState({ phase: "ready", result });
+        setState({ phase: "ready", result: stored });
       })
       .catch((e: unknown) => {
         setState({ phase: "error", message: e instanceof Error ? e.message : S.submitError });
@@ -186,6 +210,20 @@ export default function ResultPage() {
 
       {/* F-04: パターン分析（アコーディオン段階表示＋関連リンク） */}
       <PatternAnalysis patternCode={result.pattern_code} analysis={pattern} />
+
+      {/* 層3: item_rules による補足コメント */}
+      {itemComments.length > 0 && (
+        <div className="rounded-lg border p-4 sm:p-6">
+          <h2 className="mb-3 text-sm font-bold text-gray-700">{PS.itemCommentsHeading}</h2>
+          <ul className="space-y-3">
+            {itemComments.map((c, i) => (
+              <li key={i} className="text-sm leading-relaxed text-gray-700">
+                {c.comment}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* F-05: MD出力（タスク1-9） */}
 

@@ -47,6 +47,15 @@ export const LEVEL_LABELS: Record<string, string> = {
   L: "低",
 };
 
+export const EXPORT_STRINGS = {
+  heading: "結果を持ち出す",
+  download: "MDをダウンロード",
+  copy: "コピーしてAIに相談",
+  copied: "コピーしました。AIチャットに貼り付けて相談してください。",
+  copyFailed: "コピーに失敗しました。ダウンロードをご利用ください。",
+  note: "結果はこの端末にのみ保存されます。ページを閉じる前に保存してください。",
+} as const;
+
 export const PATTERN_STRINGS = {
   heading: "あなたのチームのパターン分析",
   patternCodeLabel: (code: string) => `パターン: ${code}`,

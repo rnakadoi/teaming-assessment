@@ -3,8 +3,10 @@
 // /result : 個人結果（F-02 総合スコア＋9段階解説。F-03/F-04/F-05 は後続タスクで追加）
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import ExportActions from "@/components/ExportActions";
 import FactorRadar from "@/components/FactorRadar";
 import PatternAnalysis from "@/components/PatternAnalysis";
+import { buildResultMarkdown } from "@/lib/markdown";
 import {
   fetchItemRules,
   fetchMasters,
@@ -24,8 +26,8 @@ import {
   STORAGE_KEY_RESULT,
 } from "@/lib/strings";
 
-/** 保存ペイロード: RPC結果＋生回答（層3スタイル検知に使用） */
-export type StoredResult = SubmitResult & { raw_answers?: AnswerMap };
+/** 保存ペイロード: RPC結果＋生回答（層3スタイル検知に使用）＋実施日 */
+export type StoredResult = SubmitResult & { raw_answers?: AnswerMap; taken_at?: string };
 
 type State =
   | { phase: "loading" }
@@ -92,6 +94,25 @@ export default function ResultPage() {
     return evaluateItemRules(itemRules, { adjusted, rawAnswers: raw, questionTexts });
   }, [state, masters, itemRules]);
 
+  // F-05: MD出力（マスタ・分析・層3が揃った時点の内容で生成）
+  const markdown = useMemo<string | null>(() => {
+    if (state.phase !== "ready" || !masters) return null;
+    const r = state.result;
+    return buildResultMarkdown({
+      date: r.taken_at ?? new Date().toLocaleDateString("sv-SE"),
+      total: r.total,
+      bandDescription: r.band?.description ?? null,
+      patternCode: r.pattern_code,
+      factorScores: r.factor_scores,
+      factorLevels: r.factor_levels,
+      factors: masters.factors,
+      questions: masters.questions,
+      rawAnswers: r.raw_answers ?? {},
+      analysis: pattern,
+      itemComments,
+    });
+  }, [state, masters, pattern, itemComments]);
+
   const run = useCallback(() => {
     // 再読込時は保存済み結果を再利用（二重送信を防ぐ）
     const stored = loadStoredResult();
@@ -107,7 +128,11 @@ export default function ResultPage() {
     setState({ phase: "loading" });
     submitAssessment(answers)
       .then((result) => {
-        const stored: StoredResult = { ...result, raw_answers: answers };
+        const stored: StoredResult = {
+          ...result,
+          raw_answers: answers,
+          taken_at: new Date().toLocaleDateString("sv-SE"), // YYYY-MM-DD（ローカル時刻）
+        };
         try {
           window.sessionStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(stored));
           window.sessionStorage.removeItem(STORAGE_KEY_ANSWERS);
@@ -225,7 +250,13 @@ export default function ResultPage() {
         </div>
       )}
 
-      {/* F-05: MD出力（タスク1-9） */}
+      {/* F-05: MD出力（ダウンロード・コピー） */}
+      {markdown && (
+        <ExportActions
+          markdown={markdown}
+          filenameDate={(result.taken_at ?? new Date().toLocaleDateString("sv-SE")).replaceAll("-", "")}
+        />
+      )}
 
       <div className="text-center">
         <Link

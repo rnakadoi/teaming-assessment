@@ -16,6 +16,7 @@ import {
   type PatternAnalysis as PatternAnalysisRow,
 } from "@/lib/masters";
 import { evaluateItemRules, type FiredComment } from "@/lib/rules";
+import { fetchBenchmark, type Benchmark } from "@/lib/team";
 import { submitAssessment, type SubmitResult } from "@/lib/submit";
 import type { AnswerMap } from "@/lib/scoring";
 import {
@@ -64,6 +65,7 @@ export default function ResultPage() {
   const [masters, setMasters] = useState<Masters | null>(null);
   const [pattern, setPattern] = useState<PatternAnalysisRow | null>(null);
   const [itemRules, setItemRules] = useState<ItemRule[]>([]);
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
 
   useEffect(() => {
     fetchMasters()
@@ -80,6 +82,14 @@ export default function ResultPage() {
     fetchPatternAnalysis(state.result.pattern_code)
       .then(setPattern)
       .catch(() => setPattern(null));
+  }, [state]);
+
+  // F-07: ベンチマーク（母数100件未満は available=false → 非表示）
+  useEffect(() => {
+    if (state.phase !== "ready") return;
+    fetchBenchmark(state.result.total)
+      .then(setBenchmark)
+      .catch(() => setBenchmark(null));
   }, [state]);
 
   // 層3: item_rules 評価（矛盾ペア上位2件＋スタイル検知＋top/bottom）
@@ -195,6 +205,12 @@ export default function ResultPage() {
             <h2 className="mb-1 text-sm font-bold text-gray-700">{S.bandHeading}</h2>
             <p className="text-sm leading-relaxed text-gray-700">{result.band.description}</p>
           </div>
+        )}
+        {/* F-07: ベンチマーク（母数100件以上のときのみ） */}
+        {benchmark?.available && benchmark.top_percent !== undefined && (
+          <p className="mt-3 text-xs text-gray-500">
+            {S.benchmarkText(benchmark.n, benchmark.top_percent)}
+          </p>
         )}
       </div>
 

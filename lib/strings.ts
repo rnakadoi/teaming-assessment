@@ -35,6 +35,9 @@ export const RESULT_STRINGS = {
   loading: "結果を集計しています…",
   retake: "もう一度回答する",
   radarHeading: "因子別スコア",
+  benchmarkHeading: "ベンチマーク",
+  benchmarkText: (n: number, topPercent: number) =>
+    `これまでの全${n}件の回答の中で、上位${topPercent}%に位置しています。`,
   factorTableFactor: "因子",
   factorTableScore: "スコア（−2〜+2）",
   factorTableLevel: "水準",

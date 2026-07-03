@@ -3,9 +3,16 @@
 // /result : 個人結果（F-02 総合スコア＋9段階解説。F-03/F-04/F-05 は後続タスクで追加）
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import FactorRadar from "@/components/FactorRadar";
+import { fetchMasters, type Masters } from "@/lib/masters";
 import { submitAssessment, type SubmitResult } from "@/lib/submit";
 import type { AnswerMap } from "@/lib/scoring";
-import { RESULT_STRINGS as S, STORAGE_KEY_ANSWERS, STORAGE_KEY_RESULT } from "@/lib/strings";
+import {
+  LEVEL_LABELS,
+  RESULT_STRINGS as S,
+  STORAGE_KEY_ANSWERS,
+  STORAGE_KEY_RESULT,
+} from "@/lib/strings";
 
 type State =
   | { phase: "loading" }
@@ -39,6 +46,13 @@ function loadStoredAnswers(): AnswerMap | null {
 
 export default function ResultPage() {
   const [state, setState] = useState<State>({ phase: "loading" });
+  const [masters, setMasters] = useState<Masters | null>(null);
+
+  useEffect(() => {
+    fetchMasters()
+      .then(setMasters)
+      .catch(() => setMasters(null)); // レーダー等はマスタ取得成功時のみ表示
+  }, []);
 
   const run = useCallback(() => {
     // 再読込時は保存済み結果を再利用（二重送信を防ぐ）
@@ -120,7 +134,42 @@ export default function ResultPage() {
         )}
       </div>
 
-      {/* F-03: レーダーチャート（タスク1-6） / F-04: パターン分析（タスク1-7） / F-05: MD出力（タスク1-9） */}
+      {/* F-03: 因子別レーダーチャート＋因子表 */}
+      {masters && (
+        <div className="rounded-lg border p-4 sm:p-6">
+          <h2 className="mb-2 text-sm font-bold text-gray-700">{S.radarHeading}</h2>
+          <FactorRadar
+            factors={masters.factors.map((f) => ({ code: f.code, name: f.name }))}
+            scores={result.factor_scores}
+          />
+          <table className="mt-4 w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-xs text-gray-500">
+                <th className="py-2 font-normal">{S.factorTableFactor}</th>
+                <th className="py-2 text-right font-normal">{S.factorTableScore}</th>
+                <th className="py-2 text-right font-normal">{S.factorTableLevel}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {masters.factors.map((f) => {
+                const score = result.factor_scores[f.code] ?? 0;
+                const level = result.factor_levels[f.code];
+                return (
+                  <tr key={f.code} className="border-b last:border-b-0">
+                    <td className="py-2">{f.name}</td>
+                    <td className="py-2 text-right tabular-nums">
+                      {score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2)}
+                    </td>
+                    <td className="py-2 text-right">{LEVEL_LABELS[level] ?? level}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* F-04: パターン分析（タスク1-7） / F-05: MD出力（タスク1-9） */}
 
       <div className="text-center">
         <Link

@@ -34,7 +34,18 @@ export const RESULT_STRINGS = {
   retry: "再送信",
   loading: "結果を集計しています…",
   retake: "もう一度回答する",
+  radarHeading: "因子別スコア",
+  factorTableFactor: "因子",
+  factorTableScore: "スコア（−2〜+2）",
+  factorTableLevel: "水準",
 } as const;
+
+/** 因子水準の表示ラベル */
+export const LEVEL_LABELS: Record<string, string> = {
+  H: "高",
+  M: "中",
+  L: "低",
+};
 
 /** sessionStorage キー（回答マップ {"1":4,...,"20":2}） */
 export const STORAGE_KEY_ANSWERS = "yieruka.answers.v1";

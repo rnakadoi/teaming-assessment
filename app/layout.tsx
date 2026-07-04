@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { FOOTER_LINKS } from "@/lib/links";
 
@@ -43,7 +44,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ))}
             </ul>
             <p className="mt-4 text-xs text-gray-400">
-              © オーセンティックワークス株式会社
+              <Link href="/privacy" className="underline hover:text-gray-600">
+                プライバシーポリシー
+              </Link>
+              <span className="mx-2">|</span>© オーセンティックワークス株式会社
             </p>
           </div>
         </footer>

@@ -3,8 +3,21 @@ import "./globals.css";
 import { FOOTER_LINKS } from "@/lib/links";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://teaming-assessment.vercel.app"),
   title: "「言える化」セルフアセスメント",
   description: "あなたの組織の「言える化」度合いを測定するセルフアセスメントです。",
+  openGraph: {
+    title: "「言える化」セルフアセスメント",
+    description: "あなたの組織の「言える化」度合いを20問で測定。結果は5因子の分析つき。",
+    images: ["/api/og"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "「言える化」セルフアセスメント",
+    description: "あなたの組織の「言える化」度合いを20問で測定。結果は5因子の分析つき。",
+    images: ["/api/og"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

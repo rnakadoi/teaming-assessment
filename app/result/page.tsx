@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ExportActions from "@/components/ExportActions";
 import FactorRadar from "@/components/FactorRadar";
+import LeadSection from "@/components/LeadSection";
 import PatternAnalysis from "@/components/PatternAnalysis";
 import { buildResultMarkdown } from "@/lib/markdown";
 import {
@@ -311,6 +312,9 @@ export default function ResultPage() {
           filenameDate={(result.taken_at ?? new Date().toLocaleDateString("sv-SE")).replaceAll("-", "")}
         />
       )}
+
+      {/* F-09: リード導線（帯別コンテンツ＋任意メール登録） */}
+      <LeadSection total={result.total} assessmentId={result.assessment_id} />
 
       <div className="text-center">
         <Link

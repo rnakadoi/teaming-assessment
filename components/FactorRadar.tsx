@@ -33,14 +33,14 @@ export default function FactorRadar({ factors, scores, compare }: Props) {
           <PolarGrid />
           <PolarAngleAxis dataKey="name" tick={{ fontSize: 11 }} />
           <PolarRadiusAxis domain={[-2, 2]} tickCount={5} tick={{ fontSize: 10 }} />
-          <Radar name="あなた" dataKey="score" stroke="#111827" fill="#111827" fillOpacity={0.25} />
+          <Radar name="あなた" dataKey="score" stroke="#F5B722" fill="#F5B722" fillOpacity={0.28} />
           {compare && (
             <Radar
               name={compare.label}
               dataKey="compareScore"
-              stroke="#9ca3af"
-              fill="#9ca3af"
-              fillOpacity={0.15}
+              stroke="#1A8E95"
+              fill="#1A8E95"
+              fillOpacity={0.14}
             />
           )}
         </RadarChart>

@@ -125,7 +125,7 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
           {/* 総合平均 */}
           <div className="rounded-lg border p-6 text-center">
             <p className="text-sm text-gray-500">{S.statsAvgTotal}（−40〜+40）</p>
-            <p className="my-2 text-5xl font-bold tabular-nums">
+            <p className="my-2 text-5xl font-bold tabular-nums text-brand-goldDeep">
               {stats.avg_total !== null && stats.avg_total > 0
                 ? `+${stats.avg_total}`
                 : stats.avg_total}
@@ -219,7 +219,7 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
                 <button
                   onClick={issueWave}
                   disabled={waveBusy}
-                  className="rounded bg-gray-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+                  className="rounded bg-brand-gold px-4 py-2 text-sm text-brand-ink hover:bg-brand-goldDeep disabled:opacity-50"
                 >
                   {waveBusy ? "発行中…" : "発行する"}
                 </button>

@@ -45,12 +45,12 @@ export default function ExportActions({ markdown, filenameDate }: Props) {
     <div className="rounded-lg border p-4 sm:p-6">
       <h2 className="mb-3 text-sm font-bold text-gray-700">{S.heading}</h2>
       <div className="flex flex-col gap-3 sm:flex-row">
-        <button onClick={download} className="flex-1 rounded border px-4 py-3 hover:bg-gray-50">
+        <button onClick={download} className="flex-1 rounded border border-brand-line px-4 py-3 hover:bg-brand-warm">
           {S.download}
         </button>
         <button
           onClick={copy}
-          className="flex-1 rounded bg-gray-900 px-4 py-3 text-white hover:bg-gray-700"
+          className="flex-1 rounded bg-brand-gold px-4 py-3 font-semibold text-brand-ink hover:bg-brand-goldDeep"
         >
           {S.copy}
         </button>
@@ -61,7 +61,7 @@ export default function ExportActions({ markdown, filenameDate }: Props) {
       {toast && (
         <div
           role="status"
-          className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-3rem)] max-w-md -translate-x-1/2 rounded bg-gray-900 px-4 py-3 text-center text-sm text-white shadow-lg"
+          className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-3rem)] max-w-md -translate-x-1/2 rounded bg-brand-ink px-4 py-3 text-center text-sm text-white shadow-lg"
         >
           {toast}
         </div>

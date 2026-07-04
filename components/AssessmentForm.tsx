@@ -141,7 +141,7 @@ export default function AssessmentForm({ onComplete, storageKey = STORAGE_KEY_AN
               }
             }}
             disabled={phase === "submitting"}
-            className="rounded bg-gray-900 px-4 py-3 text-white disabled:opacity-50"
+            className="rounded bg-brand-gold px-4 py-3 text-brand-ink hover:bg-brand-goldDeep disabled:opacity-50"
           >
             {phase === "submitting" ? S.submitting : S.seeResults}
           </button>
@@ -201,8 +201,8 @@ export default function AssessmentForm({ onComplete, storageKey = STORAGE_KEY_AN
               onClick={() => select(opt.value)}
               className={`rounded border px-4 py-3 text-left transition-colors ${
                 selected
-                  ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-gray-300 bg-white hover:bg-gray-50"
+                  ? "border-brand-gold bg-brand-goldSoft font-semibold text-brand-goldInk"
+                  : "border-gray-300 bg-white hover:bg-brand-warm"
               }`}
             >
               <span className="mr-2 text-xs text-gray-400">{opt.value}</span>

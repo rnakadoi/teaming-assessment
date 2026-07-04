@@ -199,7 +199,7 @@ export default function ResultPage() {
     return (
       <section className="space-y-6 py-8 text-center">
         <p className="text-gray-600">{S.noAnswers}</p>
-        <Link href="/assessment" className="inline-block rounded bg-gray-900 px-4 py-3 text-white">
+        <Link href="/assessment" className="inline-block rounded bg-brand-gold px-4 py-3 text-brand-ink hover:bg-brand-goldDeep">
           {S.goAssessment}
         </Link>
       </section>
@@ -228,11 +228,11 @@ export default function ResultPage() {
         <p className="text-sm text-gray-500">
           {S.totalLabel} <span className="text-xs">{S.totalRange(-40, 40)}</span>
         </p>
-        <p className="my-2 text-5xl font-bold tabular-nums">
+        <p className="my-2 text-5xl font-bold tabular-nums text-brand-goldDeep">
           {result.total > 0 ? `+${result.total}` : result.total}
         </p>
         {result.band && (
-          <div className="mt-4 rounded bg-gray-50 p-4 text-left">
+          <div className="mt-4 rounded bg-brand-warm p-4 text-left">
             <h2 className="mb-1 text-sm font-bold text-gray-700">{S.bandHeading}</h2>
             <p className="text-sm leading-relaxed text-gray-700">{result.band.description}</p>
           </div>

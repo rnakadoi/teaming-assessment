@@ -55,7 +55,7 @@ export default function TeamNewPage() {
                 /* コピー不可でもURLは画面に表示済み */
               }
             }}
-            className="w-full rounded bg-gray-900 px-4 py-3 text-white"
+            className="w-full rounded bg-brand-gold px-4 py-3 text-brand-ink hover:bg-brand-goldDeep"
           >
             {copied ? S.copiedUrl : S.copyUrl}
           </button>
@@ -103,7 +103,7 @@ export default function TeamNewPage() {
       <button
         onClick={submit}
         disabled={phase === "creating"}
-        className="w-full rounded bg-gray-900 px-4 py-3 text-white disabled:opacity-50"
+        className="w-full rounded bg-brand-gold px-4 py-3 text-brand-ink hover:bg-brand-goldDeep disabled:opacity-50"
       >
         {phase === "creating" ? S.creating : S.createButton}
       </button>

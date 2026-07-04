@@ -3,4 +3,4 @@
 @tailwind utilities;
 
 :root { color-scheme: light; }
-body { @apply bg-white text-gray-900 antialiased; }
+body { @apply bg-brand-body text-gray-800 antialiased; }

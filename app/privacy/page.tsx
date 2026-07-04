@@ -70,7 +70,7 @@ export default function PrivacyPage() {
               href="https://www.authentic-a.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-700 underline"
+              className="text-brand-tealDeep underline"
             >
               オーセンティックワークス株式会社
             </a>

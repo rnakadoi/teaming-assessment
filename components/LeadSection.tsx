@@ -44,7 +44,7 @@ export default function LeadSection({ total, assessmentId }: Props) {
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-700 underline"
+              className="text-brand-tealDeep underline"
             >
               {l.label}
             </a>
@@ -84,7 +84,7 @@ export default function LeadSection({ total, assessmentId }: Props) {
             <button
               onClick={submit}
               disabled={busy || !email || !consent}
-              className="rounded bg-gray-900 px-4 py-2 text-sm text-white disabled:opacity-40"
+              className="rounded bg-brand-gold px-4 py-2 text-sm text-brand-ink hover:bg-brand-goldDeep disabled:opacity-40"
             >
               {busy ? "登録中…" : "登録する"}
             </button>

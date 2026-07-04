@@ -38,9 +38,9 @@ export default function WaveComparison({ waves }: Props) {
                 type="monotone"
                 dataKey="avg"
                 name="総合スコア平均"
-                stroke="#111827"
-                strokeWidth={2}
-                dot={{ r: 4 }}
+                stroke="#1A8E95"
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: "#1A8E95" }}
               />
             </LineChart>
           </ResponsiveContainer>

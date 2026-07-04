@@ -92,7 +92,9 @@ export default function TeamJoinPage({ params }: { params: { code: string } }) {
                 aria-checked={role === value}
                 onClick={() => setRole(value)}
                 className={`rounded border px-4 py-3 text-left ${
-                  role === value ? "border-gray-900 bg-gray-900 text-white" : "border-gray-300"
+                  role === value
+                    ? "border-brand-gold bg-brand-goldSoft font-semibold text-brand-goldInk"
+                    : "border-gray-300"
                 }`}
               >
                 {label}
@@ -103,7 +105,7 @@ export default function TeamJoinPage({ params }: { params: { code: string } }) {
 
         <button
           onClick={() => setPhase("answering")}
-          className="w-full rounded bg-gray-900 px-4 py-3 text-white"
+          className="w-full rounded bg-brand-gold px-4 py-3 text-brand-ink hover:bg-brand-goldDeep"
         >
           {S.startButton}
         </button>

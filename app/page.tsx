@@ -15,7 +15,7 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <Link href="/assessment" className="rounded bg-gray-900 px-4 py-3 text-center text-white">
+        <Link href="/assessment" className="rounded bg-brand-gold px-4 py-3 text-center font-semibold text-brand-ink hover:bg-brand-goldDeep">
           アセスメントを開始する
         </Link>
         <Link href="/team/new" className="rounded border px-4 py-3 text-center">

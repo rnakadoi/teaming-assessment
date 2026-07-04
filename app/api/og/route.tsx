@@ -26,16 +26,16 @@ export async function GET(req: Request) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#111827",
+          backgroundColor: "#575757",
           color: "#ffffff",
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ fontSize: 44, opacity: 0.9 }}>「言える化」セルフアセスメント</div>
+        <div style={{ fontSize: 44, opacity: 0.92 }}>「言える化」セルフアセスメント</div>
         {total !== null ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ fontSize: 30, marginTop: 40, opacity: 0.7 }}>総合スコア（−40〜+40）</div>
-            <div style={{ fontSize: 160, fontWeight: 700, lineHeight: 1.1 }}>
+            <div style={{ fontSize: 160, fontWeight: 700, lineHeight: 1.1, color: "#F5B722" }}>
               {total > 0 ? `+${total}` : `${total}`}
             </div>
           </div>
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
             あなたのチームは、本当のことが言えていますか？
           </div>
         )}
-        <div style={{ fontSize: 24, marginTop: 48, opacity: 0.6 }}>
+        <div style={{ fontSize: 24, marginTop: 48, opacity: 0.62 }}>
           20問・3〜5分／オーセンティックワークス株式会社
         </div>
       </div>

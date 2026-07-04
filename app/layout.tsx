@@ -26,13 +26,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body className="flex min-h-screen flex-col">
-        {/* ヘッダー: 左=ホームボタン / 右=SOUNDロゴ（黒背景ロゴを角丸バッジとして表示） */}
-        <header className="border-b bg-white">
+        {/* ヘッダー: 左=ホームボタン / 右=AUTHENTIC WORKS ロゴ（透過PNG） */}
+        <header className="border-b border-brand-line bg-white">
           <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5">
             <Link
               href="/"
               aria-label="ホームへ戻る"
-              className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-gray-600 hover:bg-brand-warm hover:text-brand-ink"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -51,43 +51,43 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ホーム
             </Link>
             <a
-              href="https://www.soundmethod.jp/"
+              href="https://www.authentic-a.com/"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="SOUNDメソッド公式サイト"
+              aria-label="オーセンティックワークス株式会社"
               className="shrink-0"
             >
               <Image
-                src="/sound-logo.png"
-                alt="SOUNDメソッド®"
-                width={44}
-                height={44}
+                src="/aw-logo.png"
+                alt="AUTHENTIC WORKS"
+                width={168}
+                height={50}
                 priority
-                className="rounded-lg"
+                className="h-7 w-auto"
               />
             </a>
           </div>
         </header>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">{children}</main>
         {/* 共通フッター4リンク（仕様§4・フロント固定実装） */}
-        <footer className="border-t bg-gray-50">
+        <footer className="border-t border-brand-line bg-brand-cream">
           <div className="mx-auto max-w-2xl px-4 py-6">
-            <ul className="flex flex-col gap-2 text-xs text-gray-500 sm:flex-row sm:flex-wrap sm:gap-x-6">
+            <ul className="flex flex-col gap-2 text-xs text-brand-tealDeep sm:flex-row sm:flex-wrap sm:gap-x-6">
               {FOOTER_LINKS.map((l) => (
                 <li key={l.url}>
                   <a
                     href={l.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline hover:text-gray-700"
+                    className="underline hover:opacity-70"
                   >
                     {l.label}
                   </a>
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-xs text-gray-400">
-              <Link href="/privacy" className="underline hover:text-gray-600">
+            <p className="mt-4 text-xs text-gray-500">
+              <Link href="/privacy" className="text-brand-tealDeep underline hover:opacity-70">
                 プライバシーポリシー
               </Link>
               <span className="mx-2">|</span>© オーセンティックワークス株式会社

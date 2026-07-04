@@ -83,7 +83,7 @@ export default function PatternAnalysis({ patternCode, analysis }: Props) {
                       href={l.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-700 underline"
+                      className="text-brand-tealDeep underline"
                     >
                       {l.label}
                     </a>

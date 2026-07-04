@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import "./globals.css";
 import { FOOTER_LINKS } from "@/lib/links";
@@ -25,6 +26,48 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body className="flex min-h-screen flex-col">
+        {/* ヘッダー: 左=ホームボタン / 右=SOUNDロゴ（黒背景ロゴを角丸バッジとして表示） */}
+        <header className="border-b bg-white">
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-2.5">
+            <Link
+              href="/"
+              aria-label="ホームへ戻る"
+              className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+                aria-hidden="true"
+              >
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5 9.5V21h5v-6h4v6h5V9.5" />
+              </svg>
+              ホーム
+            </Link>
+            <a
+              href="https://www.soundmethod.jp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="SOUNDメソッド公式サイト"
+              className="shrink-0"
+            >
+              <Image
+                src="/sound-logo.png"
+                alt="SOUNDメソッド®"
+                width={44}
+                height={44}
+                priority
+                className="rounded-lg"
+              />
+            </a>
+          </div>
+        </header>
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">{children}</main>
         {/* 共通フッター4リンク（仕様§4・フロント固定実装） */}
         <footer className="border-t bg-gray-50">

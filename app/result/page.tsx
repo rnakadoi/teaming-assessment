@@ -1,7 +1,7 @@
 "use client";
 
 // /result : 個人結果（F-02 総合スコア＋9段階解説。F-03/F-04/F-05 は後続タスクで追加）
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ExportActions from "@/components/ExportActions";
 import FactorRadar from "@/components/FactorRadar";
@@ -62,6 +62,8 @@ function loadStoredAnswers(): AnswerMap | null {
 
 export default function ResultPage() {
   const [state, setState] = useState<State>({ phase: "loading" });
+  // StrictMode の effect 二重実行やリロード連打による二重送信を防ぐ
+  const submittingRef = useRef(false);
   const [masters, setMasters] = useState<Masters | null>(null);
   const [pattern, setPattern] = useState<PatternAnalysisRow | null>(null);
   const [itemRules, setItemRules] = useState<ItemRule[]>([]);
@@ -135,6 +137,8 @@ export default function ResultPage() {
       setState({ phase: "no-answers" });
       return;
     }
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setState({ phase: "loading" });
     submitAssessment(answers)
       .then((result) => {
@@ -152,6 +156,7 @@ export default function ResultPage() {
         setState({ phase: "ready", result: stored });
       })
       .catch((e: unknown) => {
+        submittingRef.current = false; // 失敗時は再送信を許可
         setState({ phase: "error", message: e instanceof Error ? e.message : S.submitError });
       });
   }, []);

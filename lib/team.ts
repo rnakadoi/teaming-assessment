@@ -95,6 +95,47 @@ export async function fetchTeamStats(code: string): Promise<TeamStats> {
   return res as TeamStats;
 }
 
+/** 新しい実施回（wave）を発行する。以後の回答は最新waveに紐づく */
+export async function createWave(teamId: string, label?: string): Promise<{ waveId: string; waveNo: number }> {
+  const { data: maxRow, error: e1 } = await supabase
+    .from("waves")
+    .select("wave_no")
+    .eq("team_id", teamId)
+    .order("wave_no", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (e1) throw new Error(`実施回の照会に失敗しました: ${e1.message}`);
+  const next = (maxRow?.wave_no ?? 0) + 1;
+  const { data, error } = await supabase
+    .from("waves")
+    .insert({ team_id: teamId, wave_no: next, label: label?.trim() || null })
+    .select("id, wave_no")
+    .single();
+  if (error) throw new Error(`実施回の発行に失敗しました: ${error.message}`);
+  return { waveId: data.id, waveNo: data.wave_no };
+}
+
+// get_team_wave_stats の返却（supabase/migrations/20260704_add_get_team_wave_stats.sql）
+export interface WaveStat {
+  wave_no: number;
+  label: string | null;
+  created_at: string;
+  n: number;
+  avg_total: number | null;
+  factor_avg: Record<string, number> | null;
+}
+
+/** wave（実施回）別の集計を取得する */
+export async function fetchWaveStats(code: string): Promise<WaveStat[]> {
+  const { data, error } = await supabase.rpc("get_team_wave_stats", {
+    p_code: code.trim().toUpperCase(),
+  });
+  if (error) throw new Error(`実施回別集計の取得に失敗しました: ${error.message}`);
+  const res = data as unknown as { error?: string; waves?: WaveStat[] };
+  if (res?.error) throw new Error("チームが見つかりません。");
+  return res.waves ?? [];
+}
+
 // get_benchmark の返却
 export interface Benchmark {
   available: boolean;

@@ -15,11 +15,13 @@ import {
   type Masters,
   type PatternAnalysis as PatternAnalysisRow,
 } from "@/lib/masters";
+import { appendHistory, loadHistory, type HistoryEntry } from "@/lib/history";
 import { evaluateItemRules, type FiredComment } from "@/lib/rules";
 import { fetchBenchmark, type Benchmark } from "@/lib/team";
 import { submitAssessment, type SubmitResult } from "@/lib/submit";
 import type { AnswerMap } from "@/lib/scoring";
 import {
+  HISTORY_STRINGS as HS,
   LEVEL_LABELS,
   PATTERN_STRINGS as PS,
   RESULT_STRINGS as S,
@@ -68,6 +70,7 @@ export default function ResultPage() {
   const [pattern, setPattern] = useState<PatternAnalysisRow | null>(null);
   const [itemRules, setItemRules] = useState<ItemRule[]>([]);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
+  const [prevEntry, setPrevEntry] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
     fetchMasters()
@@ -84,6 +87,21 @@ export default function ResultPage() {
     fetchPatternAnalysis(state.result.pattern_code)
       .then(setPattern)
       .catch(() => setPattern(null));
+  }, [state]);
+
+  // F-08: 前回比（今回分のエントリを末尾から1件除外して直前の実施を探す）
+  useEffect(() => {
+    if (state.phase !== "ready") return;
+    const h = loadHistory();
+    const r = state.result;
+    const revIdx = [...h]
+      .reverse()
+      .findIndex(
+        (e) =>
+          e.taken_at === r.taken_at && e.total === r.total && e.pattern_code === r.pattern_code
+      );
+    const filtered = revIdx === -1 ? h : h.filter((_, i) => i !== h.length - 1 - revIdx);
+    setPrevEntry(filtered.length > 0 ? filtered[filtered.length - 1] : null);
   }, [state]);
 
   // F-07: ベンチマーク（母数100件未満は available=false → 非表示）
@@ -147,6 +165,13 @@ export default function ResultPage() {
           raw_answers: answers,
           taken_at: new Date().toLocaleDateString("sv-SE"), // YYYY-MM-DD（ローカル時刻）
         };
+        // F-08: 個人履歴に追記（前回比表示用）
+        appendHistory({
+          taken_at: stored.taken_at!,
+          total: result.total,
+          factor_scores: result.factor_scores,
+          pattern_code: result.pattern_code,
+        });
         try {
           window.sessionStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(stored));
           window.sessionStorage.removeItem(STORAGE_KEY_ANSWERS);
@@ -210,6 +235,14 @@ export default function ResultPage() {
             <h2 className="mb-1 text-sm font-bold text-gray-700">{S.bandHeading}</h2>
             <p className="text-sm leading-relaxed text-gray-700">{result.band.description}</p>
           </div>
+        )}
+        {/* F-08: 前回比（この端末の履歴に前回実施がある場合のみ） */}
+        {prevEntry && (
+          <p className="mt-3 text-xs text-gray-500">
+            {prevEntry.total === result.total
+              ? HS.same(prevEntry.taken_at)
+              : HS.diffText(prevEntry.taken_at, prevEntry.total, result.total - prevEntry.total)}
+          </p>
         )}
         {/* F-07: ベンチマーク（母数100件以上のときのみ） */}
         {benchmark?.available && benchmark.top_percent !== undefined && (

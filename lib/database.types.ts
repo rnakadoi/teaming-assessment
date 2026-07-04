@@ -277,6 +277,7 @@ export type Database = {
     Functions: {
       get_benchmark: { Args: { p_total: number }; Returns: Json }
       get_team_stats: { Args: { p_code: string }; Returns: Json }
+      get_team_wave_stats: { Args: { p_code: string }; Returns: Json }
       submit_assessment: {
         Args: { p_answers: Json; p_wave_code?: string; p_role?: string }
         Returns: Json

@@ -108,6 +108,21 @@ export const TEAM_STRINGS = {
   statsAnonymity:
     "個人の回答は表示されません。少人数の場合は誰の回答か推測できてしまう可能性があるため、結果をメンバーの詮索に使わないことをチームで合意した上でご活用ください。",
   statsEmpty: "まだ回答がありません。共有URLからメンバーに回答してもらいましょう。",
+  waveHeading: "実施回ごとの推移",
+  waveNewButton: "新しい実施回をはじめる",
+  waveNewConfirm:
+    "新しい実施回を発行すると、以後の回答は新しい回に集計されます。よろしいですか？",
+  waveNewDone: (no: number) => `第${no}回をはじめました。以後の回答はこの回に集計されます。`,
+  waveNewNote: "定期的に実施すると、チームの変化を推移で見られます。",
+} as const;
+
+export const HISTORY_STRINGS = {
+  heading: "前回からの変化",
+  diffText: (prevDate: string, prevTotal: number, diff: number) =>
+    `前回（${prevDate}・総合${prevTotal > 0 ? `+${prevTotal}` : prevTotal}）から ${
+      diff > 0 ? `+${diff}` : diff
+    } の変化です。`,
+  same: (prevDate: string) => `前回（${prevDate}）と同じ総合スコアです。`,
 } as const;
 
 /** sessionStorage キー（回答マップ {"1":4,...,"20":2}） */

@@ -1,6 +1,7 @@
 "use client";
 
-// /t/{code}/results : チーム集計（F-06: 人数・平均・レーダー・ばらつき上位・役割別・匿名性注意）
+// /t/{code}/results : チーム集計（2026-07-05 仕様変更: 閲覧コードゲート＋リセット再発行）
+// 集計はチーム内の特定の人（閲覧コードを知る人）のみ閲覧可能
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import FactorRadar from "@/components/FactorRadar";
@@ -11,6 +12,8 @@ import {
   fetchTeamByCode,
   fetchTeamStats,
   fetchWaveStats,
+  resetViewCode,
+  ViewCodeError,
   type TeamInfo,
   type TeamStats,
   type WaveStat,
@@ -18,6 +21,8 @@ import {
 import { TEAM_STRINGS as S } from "@/lib/strings";
 
 type State =
+  | { phase: "gate" }
+  | { phase: "reset" }
   | { phase: "loading" }
   | { phase: "error"; message: string }
   | { phase: "ready"; stats: TeamStats };
@@ -28,36 +33,97 @@ const ROLE_LABELS: Record<string, string> = {
   unspecified: "未回答",
 };
 
+/** 認証済み閲覧コードの保存キー（端末内。再入力を省く） */
+const viewCodeKey = (code: string) => `yieruka.viewcode.${code}`;
+
 export default function TeamResultsPage({ params }: { params: { code: string } }) {
   const code = params.code.toUpperCase();
   const [state, setState] = useState<State>({ phase: "loading" });
   const [masters, setMasters] = useState<Masters | null>(null);
   const [waves, setWaves] = useState<WaveStat[]>([]);
   const [team, setTeam] = useState<TeamInfo | null>(null);
+  const [viewCode, setViewCode] = useState("");
+  const [gateInput, setGateInput] = useState("");
+  const [resetInput, setResetInput] = useState("");
+  const [newViewCode, setNewViewCode] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [gateMsg, setGateMsg] = useState<string | null>(null);
   const [waveConfirm, setWaveConfirm] = useState(false);
   const [waveBusy, setWaveBusy] = useState(false);
   const [waveMsg, setWaveMsg] = useState<string | null>(null);
 
-  const loadWaves = useCallback(() => {
-    fetchWaveStats(code)
-      .then(setWaves)
-      .catch(() => setWaves([]));
-  }, [code]);
+  const loadStats = useCallback(
+    (vc: string) => {
+      setState({ phase: "loading" });
+      setGateMsg(null);
+      fetchTeamStats(code, vc)
+        .then((stats) => {
+          setViewCode(vc);
+          try {
+            window.sessionStorage.setItem(viewCodeKey(code), vc);
+          } catch {
+            /* noop */
+          }
+          setState({ phase: "ready", stats });
+          fetchWaveStats(code, vc)
+            .then(setWaves)
+            .catch(() => setWaves([]));
+        })
+        .catch((e: unknown) => {
+          if (e instanceof ViewCodeError) {
+            try {
+              window.sessionStorage.removeItem(viewCodeKey(code));
+            } catch {
+              /* noop */
+            }
+            setGateMsg("閲覧コードが正しくありません。");
+            setState({ phase: "gate" });
+          } else {
+            setState({
+              phase: "error",
+              message: e instanceof Error ? e.message : S.notFound,
+            });
+          }
+        });
+    },
+    [code]
+  );
 
   useEffect(() => {
-    fetchTeamStats(code)
-      .then((stats) => setState({ phase: "ready", stats }))
-      .catch((e: unknown) =>
-        setState({ phase: "error", message: e instanceof Error ? e.message : S.notFound })
-      );
     fetchMasters()
       .then(setMasters)
       .catch(() => setMasters(null));
     fetchTeamByCode(code)
       .then(setTeam)
       .catch(() => setTeam(null));
-    loadWaves();
-  }, [code, loadWaves]);
+    // 端末に保存済みの閲覧コードがあれば自動で開く
+    let saved: string | null = null;
+    try {
+      saved = window.sessionStorage.getItem(viewCodeKey(code));
+    } catch {
+      /* noop */
+    }
+    if (saved) {
+      loadStats(saved);
+    } else {
+      setState({ phase: "gate" });
+    }
+  }, [code, loadStats]);
+
+  const doReset = async () => {
+    setBusy(true);
+    setGateMsg(null);
+    try {
+      const vc = await resetViewCode(code, resetInput);
+      setNewViewCode(vc);
+      setResetInput("");
+      loadStats(vc);
+    } catch (e: unknown) {
+      setGateMsg(e instanceof Error ? e.message : "再発行に失敗しました。");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const issueWave = async () => {
     if (!team) return;
@@ -67,7 +133,9 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
       const { waveNo } = await createWave(team.id);
       setWaveMsg(S.waveNewDone(waveNo));
       setWaveConfirm(false);
-      loadWaves();
+      fetchWaveStats(code, viewCode)
+        .then(setWaves)
+        .catch(() => setWaves([]));
     } catch (e: unknown) {
       setWaveMsg(e instanceof Error ? e.message : "発行に失敗しました。");
     } finally {
@@ -91,6 +159,98 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
 
   if (state.phase === "loading") {
     return <p className="py-16 text-center text-gray-500">{S.loading}</p>;
+  }
+
+  // ---- 閲覧コード入力ゲート ----
+  if (state.phase === "gate") {
+    return (
+      <section className="mx-auto max-w-md space-y-6 py-8">
+        <h1 className="text-xl font-bold">チーム集計の閲覧</h1>
+        <p className="text-sm leading-relaxed text-gray-600">
+          チーム
+          <span className="mx-1 font-mono">{code}</span>
+          の集計を閲覧するには「閲覧コード」（8文字）が必要です。チーム作成者にご確認ください。
+        </p>
+        {newViewCode && (
+          <div className="rounded-lg border-2 border-brand-gold bg-brand-goldSoft p-4">
+            <p className="text-xs font-bold text-brand-goldInk">
+              新しい閲覧コードが発行されました。必ず控えてください:
+            </p>
+            <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-brand-ink">
+              {newViewCode}
+            </p>
+          </div>
+        )}
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={gateInput}
+            onChange={(e) => setGateInput(e.target.value.toUpperCase())}
+            placeholder="閲覧コード（8文字）"
+            maxLength={8}
+            className="w-full rounded border px-3 py-3 text-center font-mono text-lg tracking-widest"
+            aria-label="閲覧コード"
+          />
+          {gateMsg && <p className="text-sm text-red-600">{gateMsg}</p>}
+          <button
+            onClick={() => loadStats(gateInput)}
+            disabled={gateInput.length !== 8}
+            className="w-full rounded bg-brand-gold px-4 py-3 font-semibold text-brand-ink hover:bg-brand-goldDeep disabled:opacity-40"
+          >
+            集計を表示する
+          </button>
+          <button
+            onClick={() => {
+              setGateMsg(null);
+              setState({ phase: "reset" });
+            }}
+            className="w-full text-sm text-gray-500 underline"
+          >
+            閲覧コードを忘れた場合（リセットコードで再発行）
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // ---- リセットコードによる閲覧コード再発行 ----
+  if (state.phase === "reset") {
+    return (
+      <section className="mx-auto max-w-md space-y-6 py-8">
+        <h1 className="text-xl font-bold">閲覧コードの再発行</h1>
+        <p className="text-sm leading-relaxed text-gray-600">
+          チーム作成時の「管理情報PDF」に記載されたリセットコード（10文字）を入力すると、新しい閲覧コードを発行します。古い閲覧コードは無効になります。
+        </p>
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={resetInput}
+            onChange={(e) => setResetInput(e.target.value.toUpperCase())}
+            placeholder="リセットコード（10文字）"
+            maxLength={10}
+            className="w-full rounded border px-3 py-3 text-center font-mono text-lg tracking-widest"
+            aria-label="リセットコード"
+          />
+          {gateMsg && <p className="text-sm text-red-600">{gateMsg}</p>}
+          <button
+            onClick={doReset}
+            disabled={busy || resetInput.length !== 10}
+            className="w-full rounded bg-brand-gold px-4 py-3 font-semibold text-brand-ink hover:bg-brand-goldDeep disabled:opacity-40"
+          >
+            {busy ? "再発行中…" : "新しい閲覧コードを発行する"}
+          </button>
+          <button
+            onClick={() => {
+              setGateMsg(null);
+              setState({ phase: "gate" });
+            }}
+            className="w-full text-sm text-gray-500 underline"
+          >
+            閲覧コードの入力に戻る
+          </button>
+        </div>
+      </section>
+    );
   }
 
   if (state.phase === "error") {
@@ -117,6 +277,17 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
           コード <span className="font-mono">{stats.team_code}</span> ／ {S.statsN(stats.n)}
         </p>
       </div>
+
+      {newViewCode && (
+        <div className="rounded-lg border-2 border-brand-gold bg-brand-goldSoft p-4">
+          <p className="text-xs font-bold text-brand-goldInk">
+            新しい閲覧コード（必ず控えてください。古いコードは無効になりました）:
+          </p>
+          <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-brand-ink">
+            {newViewCode}
+          </p>
+        </div>
+      )}
 
       {stats.n === 0 ? (
         <p className="rounded-lg border p-6 text-sm text-gray-600">{S.statsEmpty}</p>
@@ -213,13 +384,13 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
               {S.waveNewButton}
             </button>
           ) : (
-            <div className="space-y-2 rounded bg-gray-50 p-3">
+            <div className="space-y-2 rounded bg-brand-warm p-3">
               <p className="text-sm text-gray-700">{S.waveNewConfirm}</p>
               <div className="flex gap-2">
                 <button
                   onClick={issueWave}
                   disabled={waveBusy}
-                  className="rounded bg-brand-gold px-4 py-2 text-sm text-brand-ink hover:bg-brand-goldDeep disabled:opacity-50"
+                  className="rounded bg-brand-gold px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-brand-goldDeep disabled:opacity-50"
                 >
                   {waveBusy ? "発行中…" : "発行する"}
                 </button>
@@ -238,7 +409,7 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
       </div>
 
       {/* 匿名性の注意書き */}
-      <p className="rounded-lg bg-gray-50 p-4 text-xs leading-relaxed text-gray-500">
+      <p className="rounded-lg bg-brand-warm p-4 text-xs leading-relaxed text-gray-500">
         {S.statsAnonymity}
       </p>
 

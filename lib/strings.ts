@@ -52,6 +52,9 @@ export const LEVEL_LABELS: Record<string, string> = {
 
 export const EXPORT_STRINGS = {
   heading: "結果を持ち出す",
+  downloadPdf: "PDFをダウンロード",
+  generatingPdf: "PDFを生成中…",
+  pdfFailed: "PDFの生成に失敗しました。時間をおいて再度お試しください。",
   download: "MDをダウンロード",
   copy: "コピーしてAIに相談",
   copied: "コピーしました。AIチャットに貼り付けて相談してください。",

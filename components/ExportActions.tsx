@@ -9,10 +9,13 @@ interface Props {
   markdown: string;
   /** ファイル名用日付（YYYYMMDD） */
   filenameDate: string;
+  /** PDF生成処理（S-7。ロゴ・フッター付き結果PDF） */
+  onDownloadPdf?: () => Promise<void>;
 }
 
-export default function ExportActions({ markdown, filenameDate }: Props) {
+export default function ExportActions({ markdown, filenameDate, onDownloadPdf }: Props) {
   const [toast, setToast] = useState<string | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   useEffect(() => {
     if (!toast) return;
@@ -45,6 +48,24 @@ export default function ExportActions({ markdown, filenameDate }: Props) {
     <div className="rounded-lg border p-4 sm:p-6">
       <h2 className="mb-3 text-sm font-bold text-gray-700">{S.heading}</h2>
       <div className="flex flex-col gap-3 sm:flex-row">
+        {onDownloadPdf && (
+          <button
+            onClick={async () => {
+              setPdfBusy(true);
+              try {
+                await onDownloadPdf();
+              } catch {
+                setToast(S.pdfFailed);
+              } finally {
+                setPdfBusy(false);
+              }
+            }}
+            disabled={pdfBusy}
+            className="flex-1 rounded border border-brand-line px-4 py-3 hover:bg-brand-warm disabled:opacity-50"
+          >
+            {pdfBusy ? S.generatingPdf : S.downloadPdf}
+          </button>
+        )}
         <button onClick={download} className="flex-1 rounded border border-brand-line px-4 py-3 hover:bg-brand-warm">
           {S.download}
         </button>

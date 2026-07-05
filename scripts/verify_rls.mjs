@@ -39,11 +39,28 @@ const check = (name, ok, detail) => {
   );
 }
 
-// 2. teams SELECT（コード運用のため許可されている）
+// 2. teams SELECT（2026-07-05 仕様変更: 閲覧/リセットコード漏洩防止のため直接SELECT不可）
 {
-  const res = await fetch(`${BASE}/rest/v1/teams?select=code&limit=1`, { headers: HEADERS });
+  const res = await fetch(`${BASE}/rest/v1/teams?select=code,view_code&limit=1`, {
+    headers: HEADERS,
+  });
   const body = await res.json();
-  check("anon は teams を SELECT できる（コード照合運用）", res.ok && Array.isArray(body), `status=${res.status}`);
+  check(
+    "anon は teams（閲覧コード等）を直接読めない",
+    res.ok && Array.isArray(body) && body.length === 0,
+    `status=${res.status} rows=${Array.isArray(body) ? body.length : "?"}`
+  );
+}
+
+// 2b. admin_secrets（管理者コード）は完全遮断
+{
+  const res = await fetch(`${BASE}/rest/v1/admin_secrets?select=v&limit=1`, { headers: HEADERS });
+  const body = await res.json();
+  check(
+    "anon は admin_secrets（管理者コード）を読めない",
+    res.ok && Array.isArray(body) && body.length === 0,
+    `status=${res.status} rows=${Array.isArray(body) ? body.length : "?"}`
+  );
 }
 
 // 3. RPC get_team_stats（存在しないコード → error 応答のみ。生データは返らない）
@@ -51,12 +68,27 @@ const check = (name, ok, detail) => {
   const res = await fetch(`${BASE}/rest/v1/rpc/get_team_stats`, {
     method: "POST",
     headers: { ...HEADERS, "Content-Type": "application/json" },
-    body: JSON.stringify({ p_code: "ZZZZZZ" }),
+    body: JSON.stringify({ p_code: "ZZZZZZ", p_view_code: "X" }),
   });
   const body = await res.json();
   check(
     "anon は get_team_stats を実行できる（不明コードは error）",
     res.ok && body?.error === "team_not_found",
+    JSON.stringify(body).slice(0, 80)
+  );
+}
+
+// 3b. 管理者RPCは誤コードを拒否する
+{
+  const res = await fetch(`${BASE}/rest/v1/rpc/admin_list_teams`, {
+    method: "POST",
+    headers: { ...HEADERS, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_admin_code: "WRONG" }),
+  });
+  const body = await res.json();
+  check(
+    "admin_list_teams は誤った管理者コードを拒否する",
+    res.ok && body?.error === "invalid_admin_code",
     JSON.stringify(body).slice(0, 80)
   );
 }

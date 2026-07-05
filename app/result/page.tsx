@@ -305,11 +305,31 @@ export default function ResultPage() {
         </div>
       )}
 
-      {/* F-05: MD出力（ダウンロード・コピー） */}
+      {/* F-05: MD出力（ダウンロード・コピー）＋結果PDF（S-7） */}
       {markdown && (
         <ExportActions
           markdown={markdown}
           filenameDate={(result.taken_at ?? new Date().toLocaleDateString("sv-SE")).replaceAll("-", "")}
+          onDownloadPdf={
+            masters
+              ? async () => {
+                  const m = await import("@/lib/pdf/ResultPdf");
+                  await m.downloadResultPdf({
+                    date: result.taken_at ?? new Date().toLocaleDateString("sv-SE"),
+                    total: result.total,
+                    bandDescription: result.band?.description ?? null,
+                    patternCode: result.pattern_code,
+                    factorScores: result.factor_scores,
+                    factorLevels: result.factor_levels,
+                    factors: masters.factors,
+                    questions: masters.questions,
+                    rawAnswers: result.raw_answers ?? {},
+                    analysis: pattern,
+                    itemComments,
+                  });
+                }
+              : undefined
+          }
         />
       )}
 

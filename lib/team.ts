@@ -1,52 +1,39 @@
 import { supabase } from "./supabase";
 
-// 紛らわしい文字（I/L/O/0/1）を除いた6文字コード用文字集合
-const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-export const TEAM_CODE_LENGTH = 6;
-
-/** 6文字のチームコードを生成する（I/L/O/0/1 除外） */
-export function generateTeamCode(): string {
-  const buf = new Uint32Array(TEAM_CODE_LENGTH);
-  crypto.getRandomValues(buf);
-  let code = "";
-  for (let i = 0; i < TEAM_CODE_LENGTH; i++) {
-    code += CODE_CHARS[buf[i] % CODE_CHARS.length];
-  }
-  return code;
-}
+// 3コード体系（2026-07-05 仕様変更）:
+//   参加コード(6文字)=回答用 / 閲覧コード(8文字)=集計閲覧用 / リセットコード(10文字)=閲覧コード再発行用
+// teams への直接 SELECT/INSERT は RLS で封鎖済み。すべて security definer RPC 経由。
 
 export interface CreatedTeam {
   teamId: string;
-  code: string;
   waveId: string;
+  code: string;
+  viewCode: string;
+  resetCode: string;
 }
 
-/** チーム＋初回wave（wave_no=1）を作成する。コード衝突時は再生成して最大3回試行 */
+/** チーム＋初回waveを作成し、3コードを受け取る（コード生成はサーバー側） */
 export async function createTeam(name?: string): Promise<CreatedTeam> {
-  let lastError: string = "";
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const code = generateTeamCode();
-    const teamRes = await supabase
-      .from("teams")
-      .insert({ code, name: name?.trim() || null })
-      .select("id, code")
-      .single();
-    if (teamRes.error) {
-      lastError = teamRes.error.message;
-      if (teamRes.error.code === "23505") continue; // unique violation → 再生成
-      throw new Error(`チーム作成に失敗しました: ${teamRes.error.message}`);
-    }
-    const waveRes = await supabase
-      .from("waves")
-      .insert({ team_id: teamRes.data.id, wave_no: 1 })
-      .select("id")
-      .single();
-    if (waveRes.error) {
-      throw new Error(`初回waveの作成に失敗しました: ${waveRes.error.message}`);
-    }
-    return { teamId: teamRes.data.id, code: teamRes.data.code, waveId: waveRes.data.id };
-  }
-  throw new Error(`チームコードの発行に失敗しました: ${lastError}`);
+  const { data, error } = await supabase.rpc("create_team", {
+    p_name: name?.trim() || undefined,
+  });
+  if (error) throw new Error(`チーム作成に失敗しました: ${error.message}`);
+  const res = data as unknown as {
+    error?: string;
+    team_id: string;
+    wave_id: string;
+    code: string;
+    view_code: string;
+    reset_code: string;
+  };
+  if (res?.error) throw new Error(`チーム作成に失敗しました: ${res.error}`);
+  return {
+    teamId: res.team_id,
+    waveId: res.wave_id,
+    code: res.code,
+    viewCode: res.view_code,
+    resetCode: res.reset_code,
+  };
 }
 
 export interface TeamInfo {
@@ -55,20 +42,32 @@ export interface TeamInfo {
   name: string | null;
 }
 
-/** コードからチームを取得する（大文字化して照合）。見つからなければ null */
+/** コードからチーム基本情報（id/code/name）を取得。見つからなければ null */
 export async function fetchTeamByCode(code: string): Promise<TeamInfo | null> {
   const normalized = code.trim().toUpperCase();
   if (!/^[A-Z0-9]{6}$/.test(normalized)) return null;
-  const { data, error } = await supabase
-    .from("teams")
-    .select("id, code, name")
-    .eq("code", normalized)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("get_team_by_code", { p_code: normalized });
   if (error) throw new Error(`チーム照会に失敗しました: ${error.message}`);
-  return data;
+  const res = data as unknown as { error?: string; id: string; code: string; name: string | null };
+  if (res?.error) return null;
+  return { id: res.id, code: res.code, name: res.name };
 }
 
-// get_team_stats の返却（migration_init_schema.sql 準拠）
+/** 閲覧コードをリセットコードで再発行する。成功時は新しい閲覧コードを返す */
+export async function resetViewCode(code: string, resetCode: string): Promise<string> {
+  const { data, error } = await supabase.rpc("reset_view_code", {
+    p_code: code.trim().toUpperCase(),
+    p_reset_code: resetCode.trim().toUpperCase(),
+  });
+  if (error) throw new Error(`再発行に失敗しました: ${error.message}`);
+  const res = data as unknown as { error?: string; view_code?: string };
+  if (res?.error || !res.view_code) {
+    throw new Error("リセットコードが正しくありません。管理情報PDFをご確認ください。");
+  }
+  return res.view_code;
+}
+
+// get_team_stats の返却
 export interface TeamStats {
   team_code: string;
   team_name: string | null;
@@ -82,17 +81,24 @@ export interface TeamStats {
   min_n_for_detail: number;
 }
 
-/** チーム集計を取得する（security definer RPC 経由・生回答は返らない） */
-export async function fetchTeamStats(code: string): Promise<TeamStats> {
+export class ViewCodeError extends Error {
+  constructor() {
+    super("閲覧コードが正しくありません。");
+    this.name = "ViewCodeError";
+  }
+}
+
+/** チーム集計を取得する（閲覧コード必須） */
+export async function fetchTeamStats(code: string, viewCode: string): Promise<TeamStats> {
   const { data, error } = await supabase.rpc("get_team_stats", {
     p_code: code.trim().toUpperCase(),
+    p_view_code: viewCode.trim().toUpperCase(),
   });
   if (error) throw new Error(`チーム集計の取得に失敗しました: ${error.message}`);
-  const res = data as unknown;
-  if (res && typeof res === "object" && "error" in (res as Record<string, unknown>)) {
-    throw new Error("チームが見つかりません。コードをご確認ください。");
-  }
-  return res as TeamStats;
+  const res = data as unknown as { error?: string } & TeamStats;
+  if (res?.error === "invalid_view_code") throw new ViewCodeError();
+  if (res?.error) throw new Error("チームが見つかりません。コードをご確認ください。");
+  return res;
 }
 
 /** 新しい実施回（wave）を発行する。以後の回答は最新waveに紐づく */
@@ -115,7 +121,7 @@ export async function createWave(teamId: string, label?: string): Promise<{ wave
   return { waveId: data.id, waveNo: data.wave_no };
 }
 
-// get_team_wave_stats の返却（supabase/migrations/20260704_add_get_team_wave_stats.sql）
+// get_team_wave_stats の返却
 export interface WaveStat {
   wave_no: number;
   label: string | null;
@@ -125,15 +131,38 @@ export interface WaveStat {
   factor_avg: Record<string, number> | null;
 }
 
-/** wave（実施回）別の集計を取得する */
-export async function fetchWaveStats(code: string): Promise<WaveStat[]> {
+/** wave（実施回）別の集計を取得する（閲覧コード必須） */
+export async function fetchWaveStats(code: string, viewCode: string): Promise<WaveStat[]> {
   const { data, error } = await supabase.rpc("get_team_wave_stats", {
     p_code: code.trim().toUpperCase(),
+    p_view_code: viewCode.trim().toUpperCase(),
   });
   if (error) throw new Error(`実施回別集計の取得に失敗しました: ${error.message}`);
   const res = data as unknown as { error?: string; waves?: WaveStat[] };
+  if (res?.error === "invalid_view_code") throw new ViewCodeError();
   if (res?.error) throw new Error("チームが見つかりません。");
   return res.waves ?? [];
+}
+
+// ---------- 管理者（AW社内） ----------
+export interface AdminTeamRow {
+  code: string;
+  name: string | null;
+  created_at: string;
+  view_code: string;
+  n: number;
+  avg_total: number | null;
+}
+
+/** 管理者コードで全チーム一覧（回答状況・閲覧コード付き）を取得 */
+export async function adminListTeams(adminCode: string): Promise<AdminTeamRow[]> {
+  const { data, error } = await supabase.rpc("admin_list_teams", {
+    p_admin_code: adminCode.trim().toUpperCase(),
+  });
+  if (error) throw new Error(`一覧の取得に失敗しました: ${error.message}`);
+  const res = data as unknown as { error?: string; teams?: AdminTeamRow[] };
+  if (res?.error) throw new Error("管理者コードが正しくありません。");
+  return res.teams ?? [];
 }
 
 // get_benchmark の返却

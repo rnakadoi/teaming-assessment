@@ -11,7 +11,10 @@ import type { AnswerMap } from "@/lib/scoring";
 import { STORAGE_KEY_RESULT, TEAM_STRINGS as S } from "@/lib/strings";
 
 type Role = "leader" | "member" | undefined;
-type Phase = "loading" | "not-found" | "intro" | "answering" | "error";
+type Phase = "loading" | "not-found" | "intro" | "already" | "answering" | "error";
+
+/** この端末で回答済みかを記録するキー（S-4: 再回答の強制を防ぐ） */
+const submittedKey = (code: string) => `yieruka.submitted.team.${code}`;
 
 export default function TeamJoinPage({ params }: { params: { code: string } }) {
   const router = useRouter();
@@ -20,14 +23,27 @@ export default function TeamJoinPage({ params }: { params: { code: string } }) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [role, setRole] = useState<Role>(undefined);
   const [message, setMessage] = useState<string | null>(null);
+  const [submittedAt, setSubmittedAt] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTeamByCode(code)
       .then((t) => {
         if (!t) {
           setPhase("not-found");
+          return;
+        }
+        setTeam(t);
+        // 回答済み端末は回答フローに入れず案内画面へ
+        let done: string | null = null;
+        try {
+          done = window.localStorage.getItem(submittedKey(code));
+        } catch {
+          /* noop */
+        }
+        if (done) {
+          setSubmittedAt(done);
+          setPhase("already");
         } else {
-          setTeam(t);
           setPhase("intro");
         }
       })
@@ -45,6 +61,7 @@ export default function TeamJoinPage({ params }: { params: { code: string } }) {
       try {
         window.sessionStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(stored));
         window.sessionStorage.removeItem(`yieruka.answers.team.${code}`);
+        window.localStorage.setItem(submittedKey(code), stored.taken_at);
       } catch {
         /* 保存不可でも遷移は継続 */
       }
@@ -66,6 +83,39 @@ export default function TeamJoinPage({ params }: { params: { code: string } }) {
         <Link href="/" className="inline-block rounded border px-4 py-3">
           トップへ戻る
         </Link>
+      </section>
+    );
+  }
+
+  if (phase === "already") {
+    return (
+      <section className="space-y-6">
+        <h1 className="text-xl font-bold">{S.joinTitle(team?.name ?? null, code)}</h1>
+        <div className="rounded-lg border border-brand-line bg-brand-warm p-4 sm:p-6">
+          <p className="text-sm font-bold text-brand-ink">
+            このチームには回答済みです{submittedAt ? `（${submittedAt}）` : ""}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-gray-600">
+            再度回答する必要はありません。チームの集計は下のボタンから閲覧できます（閲覧コードが必要です）。
+          </p>
+        </div>
+        <div className="flex flex-col gap-3">
+          <Link
+            href={`/t/${code}/results`}
+            className="rounded bg-brand-gold px-4 py-3 text-center font-semibold text-brand-ink hover:bg-brand-goldDeep"
+          >
+            チームの集計を見る
+          </Link>
+          <Link href="/result" className="rounded border px-4 py-3 text-center">
+            自分の診断結果を見る
+          </Link>
+          <button
+            onClick={() => setPhase("intro")}
+            className="text-sm text-gray-500 underline"
+          >
+            新しい実施回などで、もう一度回答する
+          </button>
+        </div>
       </section>
     );
   }

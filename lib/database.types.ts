@@ -275,9 +275,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_teams: { Args: { p_admin_code: string }; Returns: Json }
+      create_team: { Args: { p_name?: string }; Returns: Json }
       get_benchmark: { Args: { p_total: number }; Returns: Json }
-      get_team_stats: { Args: { p_code: string }; Returns: Json }
-      get_team_wave_stats: { Args: { p_code: string }; Returns: Json }
+      get_team_by_code: { Args: { p_code: string }; Returns: Json }
+      get_team_stats: { Args: { p_code: string; p_view_code: string }; Returns: Json }
+      get_team_wave_stats: { Args: { p_code: string; p_view_code: string }; Returns: Json }
+      reset_view_code: { Args: { p_code: string; p_reset_code: string }; Returns: Json }
       submit_assessment: {
         Args: { p_answers: Json; p_wave_code?: string; p_role?: string }
         Returns: Json

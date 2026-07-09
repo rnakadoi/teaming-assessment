@@ -189,8 +189,8 @@ export default function AssessmentForm({ onComplete, storageKey = STORAGE_KEY_AN
         {q.no}. {q.text}
       </h2>
 
-      {/* 5段階選択肢 */}
-      <div className="flex flex-col gap-2" role="radiogroup" aria-label={`設問${q.no}`}>
+      {/* 5段階選択肢（2026-07-09 フィードバック: 横並び） */}
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2" role="radiogroup" aria-label={`設問${q.no}`}>
         {SCALE_OPTIONS.map((opt) => {
           const selected = answers[q.no] === opt.value;
           return (
@@ -198,15 +198,24 @@ export default function AssessmentForm({ onComplete, storageKey = STORAGE_KEY_AN
               key={opt.value}
               role="radio"
               aria-checked={selected}
+              aria-label={opt.label}
               onClick={() => select(opt.value)}
-              className={`rounded border px-4 py-3 text-left transition-colors ${
+              className={`flex min-h-[4.5rem] flex-col items-center justify-start gap-1 rounded border px-1 py-2 transition-colors sm:min-h-[5rem] ${
                 selected
                   ? "border-brand-gold bg-brand-goldSoft font-semibold text-brand-goldInk"
                   : "border-gray-300 bg-white hover:bg-brand-warm"
               }`}
             >
-              <span className="mr-2 text-xs text-gray-400">{opt.value}</span>
-              {opt.label}
+              <span
+                className={`text-base font-bold sm:text-lg ${
+                  selected ? "text-brand-goldInk" : "text-gray-400"
+                }`}
+              >
+                {opt.value}
+              </span>
+              <span className="whitespace-pre-line text-center text-[10px] leading-tight sm:text-xs">
+                {opt.short}
+              </span>
             </button>
           );
         })}

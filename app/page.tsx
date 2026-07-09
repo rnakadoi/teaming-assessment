@@ -1,13 +1,12 @@
 import Link from "next/link";
+import { APP_TITLE } from "@/lib/strings";
 
 // / : ランディング（個人実施＋チーム作成導線）
 export default function Home() {
   return (
     <section className="space-y-8">
       <div className="space-y-3">
-        <h1 className="text-2xl font-bold leading-snug">
-          「言える化」セルフアセスメント
-        </h1>
+        <h1 className="text-2xl font-bold leading-snug">{APP_TITLE}</h1>
         <p className="leading-relaxed text-gray-600">
           会議で本当のことが言えているか——。あなたの組織・チームの「言える化」の度合いを、
           20問のセルフチェックで測定します。所要時間は3〜5分です。

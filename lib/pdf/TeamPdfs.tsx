@@ -5,6 +5,7 @@
 import { pdf } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
 import { AwPage, Document, PDF_COLORS, pdfStyles, StyleSheet, Text, View } from "./base";
+import { APP_TITLE } from "@/lib/strings";
 
 export interface TeamPdfInput {
   teamName: string | null;
@@ -41,8 +42,8 @@ function AdminDocument({ input }: { input: TeamPdfInput }) {
   const joinUrl = `${input.origin}/t/${input.code}`;
   const resultsUrl = `${input.origin}/t/${input.code}/results`;
   return (
-    <Document title="チーム管理情報" author="オーセンティックワークス株式会社">
-      <AwPage headerTitle="「言える化」セルフアセスメント チーム管理情報">
+    <Document title={`${APP_TITLE} チーム管理情報`} author="オーセンティックワークス株式会社">
+      <AwPage headerTitle={`${APP_TITLE} チーム管理情報`}>
         <Text style={pdfStyles.h1}>チーム管理情報（取扱注意）</Text>
         <Text style={pdfStyles.small}>
           チーム名: {input.teamName || "（未設定）"}　／　作成日: {input.createdAt}
@@ -111,12 +112,9 @@ function AdminDocument({ input }: { input: TeamPdfInput }) {
 function GuideDocument({ input }: { input: TeamPdfInput }) {
   const joinUrl = `${input.origin}/t/${input.code}`;
   return (
-    <Document
-      title="「言える化」セルフアセスメントのご案内"
-      author="オーセンティックワークス株式会社"
-    >
-      <AwPage headerTitle="「言える化」セルフアセスメント ご案内">
-        <Text style={pdfStyles.h1}>「言える化」セルフアセスメントのご案内</Text>
+    <Document title={`${APP_TITLE} のご案内`} author="オーセンティックワークス株式会社">
+      <AwPage headerTitle={`${APP_TITLE} ご案内`}>
+        <Text style={pdfStyles.h1}>{APP_TITLE} のご案内</Text>
         {input.teamName && (
           <Text style={pdfStyles.small}>対象チーム: {input.teamName}</Text>
         )}

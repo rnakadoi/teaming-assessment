@@ -5,7 +5,7 @@ import { AwPage, Document, PDF_COLORS, pdfStyles, StyleSheet, Text, View } from 
 import type { Factor, PatternAnalysis, Question } from "@/lib/masters";
 import type { FiredComment } from "@/lib/rules";
 import type { AnswerMap, FactorLevel } from "@/lib/scoring";
-import { LEVEL_LABELS, SCALE_OPTIONS } from "@/lib/strings";
+import { APP_TITLE, LEVEL_LABELS, SCALE_OPTIONS } from "@/lib/strings";
 import { parseLinks } from "@/components/PatternAnalysis";
 
 export interface ResultPdfInput {
@@ -56,12 +56,9 @@ function ResultDocument({ input }: { input: ResultPdfInput }) {
   const links = input.analysis ? parseLinks(input.analysis.links) : [];
 
   return (
-    <Document
-      title="「言える化」セルフアセスメント 診断結果"
-      author="オーセンティックワークス株式会社"
-    >
-      <AwPage headerTitle="「言える化」セルフアセスメント 診断結果">
-        <Text style={pdfStyles.h1}>「言える化」セルフアセスメント 診断結果</Text>
+    <Document title={`${APP_TITLE} 診断結果`} author="オーセンティックワークス株式会社">
+      <AwPage headerTitle={`${APP_TITLE} 診断結果`}>
+        <Text style={pdfStyles.h1}>{APP_TITLE} 診断結果</Text>
         <Text style={pdfStyles.small}>実施日: {input.date}</Text>
 
         <View style={[s.scoreBox, { marginTop: 10 }]}>

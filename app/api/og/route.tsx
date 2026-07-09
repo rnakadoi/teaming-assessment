@@ -2,6 +2,7 @@
 // スコアのみを描画する（分析文は含めない・仕様§4）。?total=12 のように総合スコアを渡す。
 // パラメータなし（または不正値）の場合はタイトルのみのデフォルト画像を返す。
 import { ImageResponse } from "@vercel/og";
+import { APP_TITLE } from "@/lib/strings";
 
 export const runtime = "edge";
 
@@ -31,7 +32,7 @@ export async function GET(req: Request) {
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ fontSize: 44, opacity: 0.92 }}>「言える化」セルフアセスメント</div>
+        <div style={{ fontSize: 44, opacity: 0.92 }}>{APP_TITLE}</div>
         {total !== null ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ fontSize: 30, marginTop: 40, opacity: 0.7 }}>総合スコア（−40〜+40）</div>

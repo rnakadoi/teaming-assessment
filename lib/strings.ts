@@ -1,16 +1,19 @@
 // UI文言定数（仕様§9: 文言はコンポーネント外に定数化しi18n可能な構造に）
 
-/** 5段階回答の選択肢（値は生回答1..5） */
-export const SCALE_OPTIONS: { value: number; label: string }[] = [
-  { value: 1, label: "そう思わない" },
-  { value: 2, label: "あまりそう思わない" },
-  { value: 3, label: "どちらでもない" },
-  { value: 4, label: "ややそう思う" },
-  { value: 5, label: "そう思う" },
+/** 正式タイトル（2026-07-09 フィードバック: TMマーク付き） */
+export const APP_TITLE = '言える化アセスメントツール"Ieruka"™';
+
+/** 5段階回答の選択肢（値は生回答1..5。shortは横並び表示用の短縮形） */
+export const SCALE_OPTIONS: { value: number; label: string; short: string }[] = [
+  { value: 1, label: "そう思わない", short: "そう\n思わない" },
+  { value: 2, label: "あまりそう思わない", short: "あまりそう\n思わない" },
+  { value: 3, label: "どちらでもない", short: "どちらでも\nない" },
+  { value: 4, label: "ややそう思う", short: "ややそう\n思う" },
+  { value: 5, label: "そう思う", short: "そう思う" },
 ];
 
 export const ASSESSMENT_STRINGS = {
-  title: "「言える化」セルフアセスメント",
+  title: APP_TITLE,
   progressLabel: (current: number, total: number) => `${current} / ${total} 問`,
   back: "前の問いに戻る",
   loading: "設問を読み込んでいます…",

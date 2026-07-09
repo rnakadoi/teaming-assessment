@@ -278,6 +278,7 @@ export type Database = {
       admin_list_teams: { Args: { p_admin_code: string }; Returns: Json }
       create_team: { Args: { p_name?: string }; Returns: Json }
       get_benchmark: { Args: { p_total: number }; Returns: Json }
+      get_global_stats: { Args: Record<PropertyKey, never>; Returns: Json }
       get_team_by_code: { Args: { p_code: string }; Returns: Json }
       get_team_stats: { Args: { p_code: string; p_view_code: string }; Returns: Json }
       get_team_wave_stats: { Args: { p_code: string; p_view_code: string }; Returns: Json }

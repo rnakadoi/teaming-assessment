@@ -9,11 +9,13 @@ import WaveComparison from "@/components/WaveComparison";
 import { fetchMasters, type Masters } from "@/lib/masters";
 import {
   createWave,
+  fetchGlobalStats,
   fetchTeamByCode,
   fetchTeamStats,
   fetchWaveStats,
   resetViewCode,
   ViewCodeError,
+  type GlobalStats,
   type TeamInfo,
   type TeamStats,
   type WaveStat,
@@ -40,6 +42,7 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
   const code = params.code.toUpperCase();
   const [state, setState] = useState<State>({ phase: "loading" });
   const [masters, setMasters] = useState<Masters | null>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [waves, setWaves] = useState<WaveStat[]>([]);
   const [team, setTeam] = useState<TeamInfo | null>(null);
   const [viewCode, setViewCode] = useState("");
@@ -93,6 +96,10 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
     fetchMasters()
       .then(setMasters)
       .catch(() => setMasters(null));
+    // F-6: 全体平均（n>=30 のときのみ available=true）
+    fetchGlobalStats()
+      .then(setGlobalStats)
+      .catch(() => setGlobalStats(null));
     fetchTeamByCode(code)
       .then(setTeam)
       .catch(() => setTeam(null));
@@ -306,10 +313,16 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
           {/* 因子別平均レーダー */}
           {masters && stats.factor_avg && (
             <div className="rounded-lg border p-4 sm:p-6">
-              <h2 className="mb-2 text-sm font-bold text-gray-700">{S.statsRadar}</h2>
+              <h2 className="mb-2 text-base font-bold text-gray-700">{S.statsRadar}</h2>
               <FactorRadar
                 factors={masters.factors.map((f) => ({ code: f.code, name: f.name }))}
                 scores={stats.factor_avg}
+                primaryLabel="チーム平均"
+                compare={
+                  globalStats?.available && globalStats.factor_avg
+                    ? { label: `全体平均（${globalStats.n}件）`, scores: globalStats.factor_avg }
+                    : undefined
+                }
               />
             </div>
           )}

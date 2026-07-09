@@ -165,6 +165,22 @@ export async function adminListTeams(adminCode: string): Promise<AdminTeamRow[]>
   return res.teams ?? [];
 }
 
+// get_global_stats の返却（F-6: 全体平均。累積集計テーブル方式・n>=30で開示）
+export interface GlobalStats {
+  available: boolean;
+  n: number;
+  min_n: number;
+  avg_total?: number;
+  factor_avg?: Record<string, number>;
+}
+
+/** データベース全体の平均（個人・チーム両方のレーダー比較用） */
+export async function fetchGlobalStats(): Promise<GlobalStats> {
+  const { data, error } = await supabase.rpc("get_global_stats");
+  if (error) throw new Error(`全体平均の取得に失敗しました: ${error.message}`);
+  return data as unknown as GlobalStats;
+}
+
 // get_benchmark の返却
 export interface Benchmark {
   available: boolean;

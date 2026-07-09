@@ -48,7 +48,9 @@ function Section({
         <span className="font-bold">{title}</span>
         <span className="text-gray-400">{open ? "−" : "+"}</span>
       </button>
-      {open && <p className="whitespace-pre-wrap pb-4 text-sm leading-relaxed text-gray-700">{body}</p>}
+      {open && (
+        <p className="whitespace-pre-wrap pb-4 text-base leading-relaxed text-gray-700">{body}</p>
+      )}
     </div>
   );
 }
@@ -59,14 +61,14 @@ export default function PatternAnalysis({ patternCode, analysis }: Props) {
   return (
     <div className="rounded-lg border p-4 sm:p-6">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-gray-700">{S.heading}</h2>
+        <h2 className="text-base font-bold text-gray-700">{S.heading}</h2>
         <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs text-gray-500">
           {S.patternCodeLabel(patternCode)}
         </span>
       </div>
 
       {!analysis ? (
-        <p className="py-4 text-sm text-gray-500">{S.notReady}</p>
+        <p className="py-4 text-base text-gray-500">{S.notReady}</p>
       ) : (
         <>
           {analysis.summary && <Section title={S.sectionSummary} body={analysis.summary} defaultOpen />}
@@ -75,8 +77,8 @@ export default function PatternAnalysis({ patternCode, analysis }: Props) {
           {analysis.sound_step && <Section title={S.sectionSoundStep} body={analysis.sound_step} />}
           {links.length > 0 && (
             <div className="pt-4">
-              <h3 className="mb-2 text-sm font-bold">{S.sectionLinks}</h3>
-              <ul className="space-y-1 text-sm">
+              <h3 className="mb-2 text-base font-bold">{S.sectionLinks}</h3>
+              <ul className="space-y-1 text-base">
                 {links.map((l) => (
                   <li key={l.url}>
                     <a

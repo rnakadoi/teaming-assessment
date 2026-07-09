@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { APP_TITLE } from "@/lib/strings";
 
 // /privacy : プライバシーポリシー（仕様§9・タスク3-4）
 export const metadata = {
-  title: "プライバシーポリシー | 「言える化」セルフアセスメント",
+  title: `プライバシーポリシー | ${APP_TITLE}`,
 };
 
 export default function PrivacyPage() {
@@ -10,7 +11,7 @@ export default function PrivacyPage() {
     <section className="space-y-6">
       <h1 className="text-xl font-bold">プライバシーポリシー</h1>
       <p className="text-sm leading-relaxed text-gray-600">
-        「言える化」セルフアセスメント（以下「本サービス」）は、オーセンティックワークス株式会社（以下「当社」）が提供します。本サービスにおける情報の取り扱いは以下のとおりです。
+        {APP_TITLE}（以下「本サービス」）は、オーセンティックワークス株式会社（以下「当社」）が提供します。本サービスにおける情報の取り扱いは以下のとおりです。
       </p>
 
       <div className="space-y-5 text-sm leading-relaxed text-gray-700">

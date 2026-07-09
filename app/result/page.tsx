@@ -18,7 +18,7 @@ import {
 } from "@/lib/masters";
 import { appendHistory, loadHistory, type HistoryEntry } from "@/lib/history";
 import { evaluateItemRules, type FiredComment } from "@/lib/rules";
-import { fetchBenchmark, type Benchmark } from "@/lib/team";
+import { fetchBenchmark, fetchGlobalStats, type Benchmark, type GlobalStats } from "@/lib/team";
 import { submitAssessment, type SubmitResult } from "@/lib/submit";
 import type { AnswerMap } from "@/lib/scoring";
 import {
@@ -71,6 +71,7 @@ export default function ResultPage() {
   const [pattern, setPattern] = useState<PatternAnalysisRow | null>(null);
   const [itemRules, setItemRules] = useState<ItemRule[]>([]);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [prevEntry, setPrevEntry] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
@@ -80,6 +81,10 @@ export default function ResultPage() {
     fetchItemRules()
       .then(setItemRules)
       .catch(() => setItemRules([])); // 層3は取得成功時のみ表示
+    // F-6: 全体平均（n>=30 のときのみ available=true）
+    fetchGlobalStats()
+      .then(setGlobalStats)
+      .catch(() => setGlobalStats(null));
   }, []);
 
   // パターン分析文の取得（未投入なら null → 準備中表示）
@@ -233,8 +238,8 @@ export default function ResultPage() {
         </p>
         {result.band && (
           <div className="mt-4 rounded bg-brand-warm p-4 text-left">
-            <h2 className="mb-1 text-sm font-bold text-gray-700">{S.bandHeading}</h2>
-            <p className="text-sm leading-relaxed text-gray-700">{result.band.description}</p>
+            <h2 className="mb-1 text-base font-bold text-gray-700">{S.bandHeading}</h2>
+            <p className="text-base leading-relaxed text-gray-700">{result.band.description}</p>
           </div>
         )}
         {/* F-08: 前回比（この端末の履歴に前回実施がある場合のみ） */}
@@ -256,12 +261,17 @@ export default function ResultPage() {
       {/* F-03: 因子別レーダーチャート＋因子表 */}
       {masters && (
         <div className="rounded-lg border p-4 sm:p-6">
-          <h2 className="mb-2 text-sm font-bold text-gray-700">{S.radarHeading}</h2>
+          <h2 className="mb-2 text-base font-bold text-gray-700">{S.radarHeading}</h2>
           <FactorRadar
             factors={masters.factors.map((f) => ({ code: f.code, name: f.name }))}
             scores={result.factor_scores}
+            compare={
+              globalStats?.available && globalStats.factor_avg
+                ? { label: `全体平均（${globalStats.n}件）`, scores: globalStats.factor_avg }
+                : undefined
+            }
           />
-          <table className="mt-4 w-full text-sm">
+          <table className="mt-4 w-full text-base">
             <thead>
               <tr className="border-b text-left text-xs text-gray-500">
                 <th className="py-2 font-normal">{S.factorTableFactor}</th>
@@ -294,10 +304,10 @@ export default function ResultPage() {
       {/* 層3: item_rules による補足コメント */}
       {itemComments.length > 0 && (
         <div className="rounded-lg border p-4 sm:p-6">
-          <h2 className="mb-3 text-sm font-bold text-gray-700">{PS.itemCommentsHeading}</h2>
+          <h2 className="mb-3 text-base font-bold text-gray-700">{PS.itemCommentsHeading}</h2>
           <ul className="space-y-3">
             {itemComments.map((c, i) => (
-              <li key={i} className="text-sm leading-relaxed text-gray-700">
+              <li key={i} className="text-base leading-relaxed text-gray-700">
                 {c.comment}
               </li>
             ))}

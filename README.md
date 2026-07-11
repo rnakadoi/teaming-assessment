@@ -33,6 +33,7 @@
 ```bash
 npm install
 cp .env.example .env.local   # NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY を設定
+                             # SLACK_WEBHOOK_URL（任意）: Slack Incoming Webhook URL を設定するとクライアントエラーが Slack 通知される（Vercel は Production 環境変数に登録）
 npm run dev                  # http://localhost:3000
 npm run build                # 本番ビルド
 npm test                     # vitest（スコア計算・層3ルールの単体テスト）

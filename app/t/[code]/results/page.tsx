@@ -2,6 +2,7 @@
 
 // /t/{code}/results : チーム集計（2026-07-05 仕様変更: 閲覧コードゲート＋リセット再発行）
 // 集計はチーム内の特定の人（閲覧コードを知る人）のみ閲覧可能
+// 2026-07-12 仕様変更: 集計PDF/CSVダウンロード・回答受付の終了/再開を追加
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import FactorRadar from "@/components/FactorRadar";
@@ -10,17 +11,23 @@ import { fetchMasters, type Masters } from "@/lib/masters";
 import {
   createWave,
   fetchGlobalStats,
-  fetchTeamByCode,
   fetchTeamStats,
   fetchWaveStats,
   resetViewCode,
+  setWaveClosed,
   ViewCodeError,
   type GlobalStats,
-  type TeamInfo,
   type TeamStats,
   type WaveStat,
 } from "@/lib/team";
-import { TEAM_STRINGS as S } from "@/lib/strings";
+import {
+  buildTeamStatsCsv,
+  downloadCsv,
+  teamCsvFilename,
+  type ExportMasters,
+  type TeamExportInput,
+} from "@/lib/team-export";
+import { ROLE_LABELS, TEAM_STRINGS as S } from "@/lib/strings";
 
 type State =
   | { phase: "gate" }
@@ -28,12 +35,6 @@ type State =
   | { phase: "loading" }
   | { phase: "error"; message: string }
   | { phase: "ready"; stats: TeamStats };
-
-const ROLE_LABELS: Record<string, string> = {
-  leader: "リーダー・管理職",
-  member: "メンバー",
-  unspecified: "未回答",
-};
 
 /** 認証済み閲覧コードの保存キー（端末内。再入力を省く） */
 const viewCodeKey = (code: string) => `yieruka.viewcode.${code}`;
@@ -44,7 +45,6 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
   const [masters, setMasters] = useState<Masters | null>(null);
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [waves, setWaves] = useState<WaveStat[]>([]);
-  const [team, setTeam] = useState<TeamInfo | null>(null);
   const [viewCode, setViewCode] = useState("");
   const [gateInput, setGateInput] = useState("");
   const [resetInput, setResetInput] = useState("");
@@ -54,6 +54,9 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
   const [waveConfirm, setWaveConfirm] = useState(false);
   const [waveBusy, setWaveBusy] = useState(false);
   const [waveMsg, setWaveMsg] = useState<string | null>(null);
+  const [closeConfirm, setCloseConfirm] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
 
   const loadStats = useCallback(
     (vc: string) => {
@@ -100,9 +103,6 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
     fetchGlobalStats()
       .then(setGlobalStats)
       .catch(() => setGlobalStats(null));
-    fetchTeamByCode(code)
-      .then(setTeam)
-      .catch(() => setTeam(null));
     // 端末に保存済みの閲覧コードがあれば自動で開く
     let saved: string | null = null;
     try {
@@ -132,21 +132,81 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
     }
   };
 
+  const refreshWaves = useCallback(() => {
+    fetchWaveStats(code, viewCode)
+      .then(setWaves)
+      .catch(() => setWaves([]));
+  }, [code, viewCode]);
+
   const issueWave = async () => {
-    if (!team) return;
     setWaveBusy(true);
     setWaveMsg(null);
     try {
-      const { waveNo } = await createWave(team.id);
+      const { waveNo } = await createWave(code, viewCode);
       setWaveMsg(S.waveNewDone(waveNo));
       setWaveConfirm(false);
-      fetchWaveStats(code, viewCode)
-        .then(setWaves)
-        .catch(() => setWaves([]));
+      refreshWaves();
     } catch (e: unknown) {
       setWaveMsg(e instanceof Error ? e.message : "発行に失敗しました。");
     } finally {
       setWaveBusy(false);
+    }
+  };
+
+  // 最新waveの受付終了/再開（2026-07-12 仕様変更）
+  const latestWave = waves.length > 0 ? waves[waves.length - 1] : null;
+  const toggleClosed = async (closed: boolean) => {
+    setWaveBusy(true);
+    setWaveMsg(null);
+    try {
+      const { waveNo } = await setWaveClosed(code, viewCode, closed);
+      setWaveMsg(closed ? S.waveCloseDone(waveNo) : S.waveReopenDone(waveNo));
+      setCloseConfirm(false);
+      refreshWaves();
+    } catch (e: unknown) {
+      setWaveMsg(e instanceof Error ? e.message : "受付状態の変更に失敗しました。");
+    } finally {
+      setWaveBusy(false);
+    }
+  };
+
+  // 集計の持ち出し（PDF/CSV。2026-07-12 仕様変更）
+  const buildExportInput = (stats: TeamStats): TeamExportInput => {
+    const exportMasters: ExportMasters | null = masters
+      ? {
+          factors: masters.factors.map((f) => ({ code: f.code, name: f.name })),
+          questions: masters.questions.map((q) => ({ no: q.no, text: q.text })),
+        }
+      : null;
+    return {
+      date: new Date().toLocaleDateString("sv-SE"),
+      stats,
+      waves,
+      masters: exportMasters,
+      global: globalStats,
+    };
+  };
+
+  const exportPdf = async (stats: TeamStats) => {
+    setExportBusy(true);
+    setExportMsg(null);
+    try {
+      const { downloadTeamResultPdf } = await import("@/lib/pdf/TeamResultPdf");
+      await downloadTeamResultPdf(buildExportInput(stats));
+    } catch {
+      setExportMsg(S.exportFailed);
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
+  const exportCsv = (stats: TeamStats) => {
+    setExportMsg(null);
+    try {
+      const input = buildExportInput(stats);
+      downloadCsv(teamCsvFilename(stats.team_code, input.date), buildTeamStatsCsv(input));
+    } catch {
+      setExportMsg(S.exportFailed);
     }
   };
 
@@ -379,24 +439,52 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
               )}
             </>
           )}
+
+          {/* 集計の持ち出し（PDF/CSV。2026-07-12 仕様変更） */}
+          <div className="rounded-lg border p-4 sm:p-6">
+            <h2 className="mb-3 text-sm font-bold text-gray-700">{S.exportHeading}</h2>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                onClick={() => void exportPdf(stats)}
+                disabled={exportBusy}
+                className="flex-1 rounded border px-4 py-2.5 text-sm hover:bg-brand-warm disabled:opacity-40"
+              >
+                {exportBusy ? S.generatingExport : S.downloadResultPdf}
+              </button>
+              <button
+                onClick={() => exportCsv(stats)}
+                disabled={exportBusy}
+                className="flex-1 rounded border px-4 py-2.5 text-sm hover:bg-brand-warm disabled:opacity-40"
+              >
+                {S.downloadCsv}
+              </button>
+            </div>
+            {exportMsg && <p className="mt-2 text-sm text-red-600">{exportMsg}</p>}
+            <p className="mt-2 text-xs text-gray-400">
+              PDF・CSVに含まれるのは統計値のみです（個人の回答は含まれません）。
+            </p>
+          </div>
         </>
       )}
 
-      {/* F-08: 実施回ごとの推移＋新しい回の発行 */}
+      {/* F-08: 実施回ごとの推移＋新しい回の発行＋受付終了/再開 */}
       <div className="rounded-lg border p-4 sm:p-6">
         <h2 className="mb-3 text-sm font-bold text-gray-700">{S.waveHeading}</h2>
         {waves.length > 0 && <WaveComparison waves={waves} />}
         <div className="mt-4 space-y-2">
+          {latestWave && (
+            <p className="text-sm text-gray-600">
+              現在の実施回: 第{latestWave.wave_no}回
+              {latestWave.label ? `（${latestWave.label}）` : ""}
+              {latestWave.closed_at && (
+                <span className="ml-2 rounded bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
+                  {S.waveClosedBadge}
+                </span>
+              )}
+            </p>
+          )}
           {waveMsg && <p className="text-sm text-gray-700">{waveMsg}</p>}
-          {!waveConfirm ? (
-            <button
-              onClick={() => setWaveConfirm(true)}
-              disabled={!team}
-              className="rounded border px-4 py-2 text-sm disabled:opacity-40"
-            >
-              {S.waveNewButton}
-            </button>
-          ) : (
+          {waveConfirm ? (
             <div className="space-y-2 rounded bg-brand-warm p-3">
               <p className="text-sm text-gray-700">{S.waveNewConfirm}</p>
               <div className="flex gap-2">
@@ -415,6 +503,52 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
                   やめる
                 </button>
               </div>
+            </div>
+          ) : closeConfirm ? (
+            <div className="space-y-2 rounded bg-brand-warm p-3">
+              <p className="text-sm text-gray-700">{S.waveCloseConfirm}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => void toggleClosed(true)}
+                  disabled={waveBusy}
+                  className="rounded bg-brand-gold px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-brand-goldDeep disabled:opacity-50"
+                >
+                  {waveBusy ? "変更中…" : "受付を終了する"}
+                </button>
+                <button
+                  onClick={() => setCloseConfirm(false)}
+                  disabled={waveBusy}
+                  className="rounded border px-4 py-2 text-sm"
+                >
+                  やめる
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setWaveConfirm(true)}
+                className="rounded border px-4 py-2 text-sm"
+              >
+                {S.waveNewButton}
+              </button>
+              {latestWave &&
+                (latestWave.closed_at ? (
+                  <button
+                    onClick={() => void toggleClosed(false)}
+                    disabled={waveBusy}
+                    className="rounded border px-4 py-2 text-sm disabled:opacity-40"
+                  >
+                    {waveBusy ? "変更中…" : S.waveReopenButton}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setCloseConfirm(true)}
+                    className="rounded border px-4 py-2 text-sm"
+                  >
+                    {S.waveCloseButton}
+                  </button>
+                ))}
             </div>
           )}
           <p className="text-xs text-gray-400">{S.waveNewNote}</p>

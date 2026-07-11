@@ -11,7 +11,7 @@ import type { AnswerMap } from "@/lib/scoring";
 import { STORAGE_KEY_RESULT, TEAM_STRINGS as S } from "@/lib/strings";
 
 type Role = "leader" | "member" | undefined;
-type Phase = "loading" | "not-found" | "intro" | "already" | "answering" | "error";
+type Phase = "loading" | "not-found" | "closed" | "intro" | "already" | "answering" | "error";
 
 /** この端末で回答済みかを記録するキー（S-4: 再回答の強制を防ぐ） */
 const submittedKey = (code: string) => `yieruka.submitted.team.${code}`;
@@ -33,6 +33,11 @@ export default function TeamJoinPage({ params }: { params: { code: string } }) {
           return;
         }
         setTeam(t);
+        // 受付終了中の実施回には回答できない（2026-07-12 仕様変更）
+        if (t.latestWaveClosed) {
+          setPhase("closed");
+          return;
+        }
         // 回答済み端末は回答フローに入れず案内画面へ
         let done: string | null = null;
         try {
@@ -83,6 +88,29 @@ export default function TeamJoinPage({ params }: { params: { code: string } }) {
         <Link href="/" className="inline-block rounded border px-4 py-3">
           トップへ戻る
         </Link>
+      </section>
+    );
+  }
+
+  if (phase === "closed") {
+    return (
+      <section className="space-y-6">
+        <h1 className="text-xl font-bold">{S.joinTitle(team?.name ?? null, code)}</h1>
+        <div className="rounded-lg border border-brand-line bg-brand-warm p-4 sm:p-6">
+          <p className="text-sm font-bold text-brand-ink">{S.joinClosedTitle}</p>
+          <p className="mt-2 text-sm leading-relaxed text-gray-600">{S.joinClosedLead}</p>
+        </div>
+        <div className="flex flex-col gap-3">
+          <Link
+            href={`/t/${code}/results`}
+            className="rounded bg-brand-gold px-4 py-3 text-center font-semibold text-brand-ink hover:bg-brand-goldDeep"
+          >
+            チームの集計を見る
+          </Link>
+          <Link href="/" className="rounded border px-4 py-3 text-center">
+            トップへ戻る
+          </Link>
+        </div>
       </section>
     );
   }

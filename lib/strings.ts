@@ -120,6 +120,49 @@ export const TEAM_STRINGS = {
     "新しい実施回を発行すると、以後の回答は新しい回に集計されます。よろしいですか？",
   waveNewDone: (no: number) => `第${no}回をはじめました。以後の回答はこの回に集計されます。`,
   waveNewNote: "定期的に実施すると、チームの変化を推移で見られます。",
+  // 受付クローズ（2026-07-12 仕様変更: 測定期間外の回答混入防止）
+  waveCloseButton: "回答の受付を終了する",
+  waveReopenButton: "回答の受付を再開する",
+  waveClosedBadge: "受付終了",
+  waveCloseConfirm:
+    "回答の受付を終了すると、以後この実施回への回答はできなくなります（あとから再開できます）。よろしいですか？",
+  waveCloseDone: (no: number) => `第${no}回の受付を終了しました。`,
+  waveReopenDone: (no: number) => `第${no}回の受付を再開しました。`,
+  joinClosedTitle: "回答の受付は終了しています",
+  joinClosedLead:
+    "この実施回の回答受付は終了しました。次回の実施についてはチーム作成者にご確認ください。",
+  // 集計の持ち出し（2026-07-12 仕様変更: 集計PDF・CSV）
+  exportHeading: "集計を持ち出す",
+  downloadResultPdf: "集計PDFをダウンロード",
+  downloadCsv: "CSVをダウンロード",
+  generatingExport: "生成中…",
+  exportFailed: "生成に失敗しました。時間をおいて再度お試しください。",
+} as const;
+
+/** 役割タグの表示ラベル（集計画面・PDF・CSVで共通） */
+export const ROLE_LABELS: Record<string, string> = {
+  leader: "リーダー・管理職",
+  member: "メンバー",
+  unspecified: "未回答",
+};
+
+export const ADMIN_STRINGS = {
+  deleteScopeTeamOnly: "チームの情報だけを削除（回答データは匿名のまま全体統計に残る）",
+  deleteScopeWithAssessments: "回答データもすべて削除（このチームの回答を完全に消去）",
+  deleteButton: "選択したチームを削除…",
+  deleteConfirmTitle: "削除の確認",
+  deleteIrreversible: "この操作は取り消せません。",
+  deleteExecute: "削除を実行",
+  deleteBusy: "削除中…",
+  deleteDone: (teams: number, withAssessments: boolean, assessments: number) =>
+    `チーム ${teams} 件を削除しました` +
+    (withAssessments
+      ? `（回答データ ${assessments} 件も削除）`
+      : "（回答データは匿名のまま全体統計に残ります）"),
+  resultPdfButton: "集計PDF",
+  adminPdfButton: "管理情報PDF",
+  csvButton: "CSV",
+  generating: "生成中…",
 } as const;
 
 export const HISTORY_STRINGS = {

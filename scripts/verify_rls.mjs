@@ -108,6 +108,56 @@ const check = (name, ok, detail) => {
   );
 }
 
+// 4b. 管理機能スイート（2026-07-12 仕様変更）の新RPC・ポリシー確認
+{
+  const res = await fetch(`${BASE}/rest/v1/rpc/admin_delete_teams`, {
+    method: "POST",
+    headers: { ...HEADERS, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_admin_code: "WRONG", p_codes: ["ZZZZZZ"] }),
+  });
+  const body = await res.json();
+  check(
+    "admin_delete_teams は誤った管理者コードを拒否する",
+    res.ok && body?.error === "invalid_admin_code",
+    JSON.stringify(body).slice(0, 80)
+  );
+}
+{
+  const res = await fetch(`${BASE}/rest/v1/rpc/set_wave_closed`, {
+    method: "POST",
+    headers: { ...HEADERS, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_code: "ZZZZZZ", p_view_code: "X", p_closed: true }),
+  });
+  const body = await res.json();
+  check(
+    "set_wave_closed は不明コードを拒否する",
+    res.ok && body?.error === "team_not_found",
+    JSON.stringify(body).slice(0, 80)
+  );
+}
+{
+  const res = await fetch(`${BASE}/rest/v1/rpc/create_wave`, {
+    method: "POST",
+    headers: { ...HEADERS, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_code: "ZZZZZZ", p_view_code: "X" }),
+  });
+  const body = await res.json();
+  check(
+    "create_wave は不明コードを拒否する",
+    res.ok && body?.error === "team_not_found",
+    JSON.stringify(body).slice(0, 80)
+  );
+}
+{
+  const res = await fetch(`${BASE}/rest/v1/waves?select=id&limit=1`, { headers: HEADERS });
+  const body = await res.json();
+  check(
+    "anon は waves を直接読めない（create_wave RPC 移行後）",
+    res.ok && Array.isArray(body) && body.length === 0,
+    `status=${res.status} rows=${Array.isArray(body) ? body.length : "?"}`
+  );
+}
+
 // 5. leads / pattern_analyses / questions のポリシー確認
 {
   const res = await fetch(`${BASE}/rest/v1/leads?select=email&limit=1`, { headers: HEADERS });

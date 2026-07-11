@@ -21,6 +21,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   missing_answer: "未回答の設問があります。",
   invalid_role: "役割タグが不正です。",
   team_not_found: "チームコードが見つかりません。",
+  wave_closed: "この実施回は回答の受付を終了しています。チーム作成者にご確認ください。",
   invalid_master: "設問マスタに問題があります。管理者にお問い合わせください。",
 };
 

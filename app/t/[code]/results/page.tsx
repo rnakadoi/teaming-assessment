@@ -28,6 +28,7 @@ import {
   type TeamExportInput,
 } from "@/lib/team-export";
 import { ROLE_LABELS, TEAM_STRINGS as S } from "@/lib/strings";
+import { notifyError } from "@/lib/notify";
 
 type State =
   | { phase: "gate" }
@@ -85,6 +86,7 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
             setGateMsg("閲覧コードが正しくありません。");
             setState({ phase: "gate" });
           } else {
+            notifyError("team-results", e);
             setState({
               phase: "error",
               message: e instanceof Error ? e.message : S.notFound,
@@ -193,7 +195,8 @@ export default function TeamResultsPage({ params }: { params: { code: string } }
     try {
       const { downloadTeamResultPdf } = await import("@/lib/pdf/TeamResultPdf");
       await downloadTeamResultPdf(buildExportInput(stats));
-    } catch {
+    } catch (e: unknown) {
+      notifyError("team-results-pdf", e);
       setExportMsg(S.exportFailed);
     } finally {
       setExportBusy(false);

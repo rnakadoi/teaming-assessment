@@ -22,6 +22,7 @@ import {
   type TeamExportInput,
 } from "@/lib/team-export";
 import { ADMIN_STRINGS as A } from "@/lib/strings";
+import { notifyError } from "@/lib/notify";
 
 const ADMIN_CODE_KEY = "yieruka.admincode";
 const viewCodeKey = (code: string) => `yieruka.viewcode.${code}`;
@@ -68,6 +69,7 @@ export default function AdminPage() {
         } catch {
           /* noop */
         }
+        notifyError("admin", e);
         setMessage(e instanceof Error ? e.message : "取得に失敗しました。");
         setState({ phase: "gate" });
       });
@@ -122,6 +124,7 @@ export default function AdminPage() {
       const { downloadTeamResultPdf } = await import("@/lib/pdf/TeamResultPdf");
       await downloadTeamResultPdf(input);
     } catch (e: unknown) {
+      notifyError("admin-pdf", e);
       setMessage(e instanceof Error ? e.message : "PDF生成に失敗しました。");
     } finally {
       setBusyCode(null);
@@ -143,6 +146,7 @@ export default function AdminPage() {
         origin: window.location.origin,
       });
     } catch (e: unknown) {
+      notifyError("admin-pdf", e);
       setMessage(e instanceof Error ? e.message : "PDF生成に失敗しました。");
     } finally {
       setBusyCode(null);
@@ -157,6 +161,7 @@ export default function AdminPage() {
       const input = await fetchExportInput(row);
       downloadCsv(teamCsvFilename(row.code, input.date), buildTeamStatsCsv(input));
     } catch (e: unknown) {
+      notifyError("admin-csv", e);
       setMessage(e instanceof Error ? e.message : "CSV生成に失敗しました。");
     } finally {
       setBusyCode(null);
@@ -188,6 +193,7 @@ export default function AdminPage() {
       const teams = await adminListTeams(adminCode);
       setState({ phase: "ready", teams });
     } catch (e: unknown) {
+      notifyError("admin-delete", e);
       setMessage(e instanceof Error ? e.message : "削除に失敗しました。");
     } finally {
       setDeleteBusy(false);

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { notifyError } from "./notify";
 import type { Json } from "./database.types";
 import type { AnswerMap, FactorLevel } from "./scoring";
 
@@ -25,6 +26,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_master: "設問マスタに問題があります。管理者にお問い合わせください。",
 };
 
+const EXPECTED_USER_ERRORS = new Set(["team_not_found", "wave_closed"]);
+
 /**
  * 回答を送信し、サーバー計算の結果一式を受け取る。
  * 個人利用は waveCode/role を省略。チーム参加は waveCode（チームコード）を渡す。
@@ -40,12 +43,17 @@ export async function submitAssessment(
     ...(role ? { p_role: role } : {}),
   });
   if (error) {
-    throw new Error(`送信に失敗しました: ${error.message}`);
+    const err = new Error(`送信に失敗しました: ${error.message}`);
+    notifyError("submit", err);
+    throw err;
   }
   const res = data as unknown;
   if (res && typeof res === "object" && "error" in (res as Record<string, unknown>)) {
     const code = String((res as Record<string, unknown>).error);
-    throw new Error(ERROR_MESSAGES[code] ?? `送信に失敗しました: ${code}`);
+    const err = new Error(ERROR_MESSAGES[code] ?? `送信に失敗しました: ${code}`);
+    // 想定内のユーザー起因（コード誤り・受付終了）は通知せず、それ以外を Slack 通知
+    if (!EXPECTED_USER_ERRORS.has(code)) notifyError("submit", err);
+    throw err;
   }
   return res as SubmitResult;
 }
